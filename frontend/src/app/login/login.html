@@ -1,0 +1,62 @@
+<main class="login-page">
+  <section class="login-card" aria-label="Inicio de sesion">
+    <div class="login-brand">
+      <span class="brand-mark" aria-hidden="true">
+        <img [src]="loginLogoPath" alt="" />
+      </span>
+      <div class="brand-copy">
+        <span>Sistema de Servicio Tecnico</span>
+        <h1>Almacen Pajaro Azul</h1>
+      </div>
+    </div>
+
+    <form class="login-form">
+      <div class="field-group">
+        <label for="username">Usuario</label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-user"></p-inputicon>
+          <input
+            id="username"
+            name="username"
+            pInputText
+            type="text"
+            [(ngModel)]="username"
+            autocomplete="username"
+            placeholder="usuario"
+          />
+        </p-iconfield>
+      </div>
+
+      <div class="field-group">
+        <label for="password">Contrasena</label>
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-lock"></p-inputicon>
+          <input
+            id="password"
+            name="password"
+            pInputText
+            type="password"
+            [(ngModel)]="password"
+            autocomplete="current-password"
+            placeholder="Ingresa tu contrasena"
+          />
+        </p-iconfield>
+      </div>
+
+      <label class="forgot-button">
+        <input
+          name="rememberUser"
+          type="checkbox"
+          [(ngModel)]="rememberUser"
+        />
+        Recordar usuario
+      </label>
+
+      <button pButton type="button" class="login-button" routerLink="/home">
+        <span pButtonLabel>Iniciar sesion</span>
+      </button>
+    </form>
+
+    <button type="button" class="forgot-button">Olvide mi contrasena</button>
+  </section>
+</main>

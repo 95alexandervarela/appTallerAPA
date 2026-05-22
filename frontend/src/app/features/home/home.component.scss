@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+
+.dashboard-shell {
+  display: grid;
+  gap: 18px;
+  color: #ffffff;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(24px);
+}
+
+.section-header span,
+.ticket-row span,
+.summary-list span,
+.queue-item span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.section-header h1 {
+  margin: 4px 0 0;
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+}
+
+.metrics-grid,
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+  gap: 16px;
+}
+
+.widget-grid {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+:host ::ng-deep .glass-widget {
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+}
+
+:host ::ng-deep .glass-widget .p-card-title {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.chart-placeholder {
+  height: 260px;
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  padding-top: 28px;
+}
+
+.chart-placeholder span {
+  width: 100%;
+  min-width: 28px;
+  border-radius: 14px 14px 6px 6px;
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.queue-list,
+.summary-list {
+  display: grid;
+  gap: 18px;
+}
+
+.queue-item {
+  display: grid;
+  gap: 9px;
+}
+
+.queue-item div,
+.ticket-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticket-row {
+  min-height: 46px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ticket-row:last-child {
+  border-bottom: 0;
+}
+
+.summary-list span {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.summary-list span:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid,
+  .widget-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

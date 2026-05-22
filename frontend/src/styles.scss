@@ -1,0 +1,103 @@
+@import "primeicons/primeicons.css";
+
+/**
+ * @section Fluent typography tokens
+ *
+ * @remarks
+ * Defines the global font stack for the Angular frontend using a Microsoft
+ * Fluent Design inspired approach. Segoe UI is the preferred interface font,
+ * while Helvetica Neue and Arial provide reliable fallbacks on Linux systems
+ * where Segoe UI is commonly unavailable.
+ *
+ * @future
+ * Extend this block with size, line-height and letter-spacing tokens before
+ * adding new dashboards or dense operational modules.
+ */
+:root {
+  --font-ui: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-code: "Cascadia Code", Consolas, monospace;
+  --font-reading: var(--font-ui);
+  --font-mono: var(--font-code);
+}
+
+/**
+ * @section Layout reset
+ *
+ * @remarks
+ * Keeps sizing predictable across PrimeNG controls and custom application
+ * surfaces. This prevents padding and borders from unexpectedly changing the
+ * final width of forms, cards and dashboard panels.
+ */
+* {
+  box-sizing: border-box;
+}
+
+/**
+ * @section Document shell
+ *
+ * @remarks
+ * Establishes the minimum document height and removes browser default margins.
+ * The body receives the global UI font so labels, text and controls inherit a
+ * consistent Fluent-style base without repeating font declarations per
+ * component.
+ */
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #0f172a;
+  font-family: var(--font-ui);
+  font-weight: 400;
+}
+
+/**
+ * @section Typography hierarchy
+ *
+ * @remarks
+ * Applies the Semibold weight used by Fluent Design for primary headings.
+ * Normal body text stays Regular through the `body` rule above. Labels and
+ * common UI controls inherit the same interface font for visual consistency.
+ */
+h1,
+h2,
+h3,
+.text-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+label,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-ui);
+  font-weight: 400;
+}
+
+/**
+ * @section Reusable font utilities
+ *
+ * @remarks
+ * Use `.font-ui` for general interface text, `.font-code` for technical values
+ * such as identifiers or logs, and `.text-title` for heading-like text outside
+ * native heading elements.
+ */
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+.font-code,
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-code);
+}
+
+.text-title {
+  line-height: 1.2;
+}

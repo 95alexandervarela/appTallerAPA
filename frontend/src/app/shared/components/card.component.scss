@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .dashboard-card {
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.card-icon {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.card-title,
+small {
+  display: block;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+strong {
+  display: block;
+  margin: 3px 0;
+  font-size: 1.7rem;
+  line-height: 1;
+}

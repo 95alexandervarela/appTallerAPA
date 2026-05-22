@@ -1,0 +1,79 @@
+<section class="dashboard-shell">
+  <header class="section-header">
+    <div>
+      <span>Sistema de Servicio Tecnico</span>
+      <h1>Overview</h1>
+    </div>
+    <p-tag value="Datos simulados" severity="info" />
+  </header>
+
+  <section class="metrics-grid" aria-label="Metricas principales">
+    @for (metric of metrics; track metric.title) {
+      <app-dashboard-card
+        [title]="metric.title"
+        [value]="metric.value"
+        [detail]="metric.detail"
+        [icon]="metric.icon"
+      />
+    }
+  </section>
+
+  <section class="dashboard-grid">
+    <p-card styleClass="glass-widget chart-widget">
+      <ng-template #title>Actividad de tickets</ng-template>
+      <div class="chart-placeholder" aria-label="Grafica simulada de tickets">
+        <span style="height: 42%"></span>
+        <span style="height: 74%"></span>
+        <span style="height: 58%"></span>
+        <span style="height: 86%"></span>
+        <span style="height: 64%"></span>
+        <span style="height: 92%"></span>
+      </div>
+    </p-card>
+
+    <p-card styleClass="glass-widget">
+      <ng-template #title>Colas de trabajo</ng-template>
+      <div class="queue-list">
+        @for (item of queue; track item.label) {
+          <div class="queue-item">
+            <div>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+            </div>
+            <p-progressbar [value]="item.progress" [showValue]="false" />
+          </div>
+        }
+      </div>
+    </p-card>
+  </section>
+
+  <section class="widget-grid">
+    <p-card styleClass="glass-widget">
+      <ng-template #title>Tickets recientes</ng-template>
+      <div class="ticket-row">
+        <span>APA-0104</span>
+        <strong>Impresora de caja</strong>
+        <p-tag value="Abierto" severity="warn" />
+      </div>
+      <div class="ticket-row">
+        <span>APA-0105</span>
+        <strong>Equipo administrativo</strong>
+        <p-tag value="En progreso" severity="info" />
+      </div>
+      <div class="ticket-row">
+        <span>APA-0106</span>
+        <strong>Lector de codigo</strong>
+        <p-tag value="Pendiente" severity="danger" />
+      </div>
+    </p-card>
+
+    <p-card styleClass="glass-widget">
+      <ng-template #title>Resumen operativo</ng-template>
+      <div class="summary-list">
+        <span>4 tecnicos activos</span>
+        <span>38 min promedio de respuesta</span>
+        <span>92% cumplimiento semanal</span>
+      </div>
+    </p-card>
+  </section>
+</section>

@@ -1,0 +1,13 @@
+{
+  "watch": [
+    "backend/server.js",
+    "backend/config",
+    "backend/models",
+    "backend/routes"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "node_modules"
+  ],
+  "exec": "node backend/server.js"
+}

@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.layout-shell {
+  min-height: 100dvh;
+  padding: 18px;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.58)),
+    url("https://fqjltiegiezfetthbags.supabase.co/storage/v1/object/public/block.images/blocks/signin/signin-glass.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.layout-content {
+  min-height: calc(100dvh - 36px);
+  margin-left: 282px;
+}
+
+@media (max-width: 900px) {
+  .layout-shell {
+    display: grid;
+    gap: 16px;
+  }
+
+  .layout-content {
+    min-height: auto;
+    margin-left: 0;
+  }
+}

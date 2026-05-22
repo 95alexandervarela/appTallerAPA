@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 18px;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.58)),
+    url("https://fqjltiegiezfetthbags.supabase.co/storage/v1/object/public/block.images/blocks/signin/signin-glass.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.login-card {
+  width: min(100%, 410px);
+  display: grid;
+  gap: 30px;
+  padding: 38px 34px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(24px);
+  font-family: var(--font-ui);
+}
+
+.login-brand {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  text-align: center;
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 148px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 1.45rem;
+}
+
+/**
+ * El logo institucional es una imagen horizontal; antes se deformaba porque el
+ * HTML le imponia el mismo ancho y alto. `object-fit: contain` mantiene su
+ * proporcion original y lo centra sin recortarlo dentro del contenedor. Se
+ * aumento ligeramente su limite visual sin cambiar la alineacion del bloque.
+ */
+.brand-mark img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 136px;
+  max-height: 46px;
+  object-fit: contain;
+}
+
+.brand-copy span,
+.brand-copy p,
+.forgot-button {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.brand-copy h1 {
+  margin: 5px 0 8px;
+  color: #ffffff;
+  font-family: var(--font-reading);
+  font-size: clamp(1.9rem, 6vw, 2.45rem);
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.brand-copy p {
+  margin: 0;
+  font-family: var(--font-reading);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.login-form {
+  display: grid;
+  gap: 18px;
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.field-group label {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.88rem;
+}
+
+:host ::ng-deep .p-iconfield {
+  width: 100%;
+}
+
+:host ::ng-deep .p-inputicon {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.field-group input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  outline: 0;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.field-group input::placeholder {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.field-group input:focus {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+:host ::ng-deep .login-button {
+  width: 100%;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.96);
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+}
+
+:host ::ng-deep .login-button:hover {
+  border-color: #1f2937;
+  background: #1f2937;
+}
+
+.forgot-button {
+  justify-self: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.forgot-button:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .login-card {
+    padding: 30px 22px;
+  }
+}
