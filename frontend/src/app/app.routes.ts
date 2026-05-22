@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { ConfigComponent } from './features/config/config.component';
 import { HomeComponent } from './features/home/home.component';
 import { LayoutComponent } from './layout/layout.component';
 import { Login } from './login/login';
@@ -23,6 +24,23 @@ export const routes: Routes = [
       {
         path: '',
         component: HomeComponent
+      }
+    ]
+  },
+  /**
+   * Ruta de configuracion renderizada dentro del layout principal.
+   *
+   * @remarks
+   * Mantiene visible el sidebar y solo reemplaza el contenido derecho por la
+   * vista interna de configuracion.
+   */
+  {
+    path: 'config',
+    component: LayoutComponent,
+    children: [
+      {
+        path: '',
+        component: ConfigComponent
       }
     ]
   },

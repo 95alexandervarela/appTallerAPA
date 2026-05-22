@@ -1,0 +1,97 @@
+.users-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.users-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.users-header span,
+.users-header p,
+.users-fields span,
+.users-row-head span,
+.users-row > span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.users-header h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+}
+
+.users-header p {
+  margin: 0;
+}
+
+.create-user-button {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(14, 165, 233, 0.34) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
+}
+
+.create-user-button:hover {
+  background: rgba(14, 165, 233, 0.46) !important;
+}
+
+.users-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.users-fields div,
+.users-table {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.users-fields div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.users-table {
+  overflow: hidden;
+}
+
+.users-row {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.users-row:last-child {
+  border-bottom: 0;
+}
+
+.users-row-head {
+  min-height: 42px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .users-header {
+    flex-direction: column;
+  }
+
+  .users-fields,
+  .users-row {
+    grid-template-columns: 1fr;
+  }
+}

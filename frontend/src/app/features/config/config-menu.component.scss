@@ -1,0 +1,38 @@
+.config-menu {
+  display: grid;
+  gap: 8px;
+}
+
+.config-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.config-menu-item:hover,
+.config-menu-item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.config-menu-item i {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.config-menu-item span {
+  line-height: 1;
+}

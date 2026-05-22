@@ -1,0 +1,34 @@
+<section class="config-shell">
+  <header class="config-header">
+    <div>
+      <span>Sistema de Servicio Tecnico</span>
+      <h1>Configuracion</h1>
+    </div>
+    <strong>Panel administrativo</strong>
+  </header>
+
+  <section class="config-grid">
+    <aside class="config-submenu-panel" aria-label="Submenu de configuracion">
+      <span>Preferencias</span>
+      <h2>Configuracion</h2>
+
+      <app-config-menu
+        [options]="options"
+        [selectedKey]="selectedKey"
+        (selectedKeyChange)="selectedKey = $event"
+      />
+    </aside>
+
+    <section class="config-content-panel">
+      @if (selectedKey === 'usuarios') {
+        <app-users-panel />
+      } @else {
+        <div class="config-placeholder">
+          <i [class]="selectedOption.icon" aria-hidden="true"></i>
+          <span>{{ selectedOption.label }}</span>
+          <p>Contenido simulado preparado para la siguiente iteracion.</p>
+        </div>
+      }
+    </section>
+  </section>
+</section>

@@ -1,0 +1,45 @@
+<section class="users-panel">
+  <header class="users-header">
+    <div>
+      <span>Usuarios</span>
+      <h2>Gestion de usuarios</h2>
+      <p>Administra accesos simulados para el equipo de Taller.</p>
+    </div>
+
+    <button pButton type="button" class="create-user-button">
+      <i class="pi pi-user-plus" aria-hidden="true"></i>
+      <span pButtonLabel>Crear usuario</span>
+    </button>
+  </header>
+
+  <section class="users-fields" aria-label="Campos simulados de usuarios">
+    <div>
+      <span>Rol predeterminado</span>
+      <strong>Tecnico</strong>
+    </div>
+    <div>
+      <span>Estado inicial</span>
+      <strong>Activo</strong>
+    </div>
+    <div>
+      <span>Permisos</span>
+      <strong>Tickets</strong>
+    </div>
+  </section>
+
+  <section class="users-table" aria-label="Usuarios simulados">
+    <div class="users-row users-row-head">
+      <span>Nombre</span>
+      <span>Rol</span>
+      <span>Estado</span>
+    </div>
+
+    @for (user of users; track user.name) {
+      <div class="users-row">
+        <strong>{{ user.name }}</strong>
+        <span>{{ user.role }}</span>
+        <p-tag [value]="user.status" [severity]="user.severity" />
+      </div>
+    }
+  </section>
+</section>

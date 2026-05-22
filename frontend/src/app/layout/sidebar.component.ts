@@ -39,6 +39,7 @@ export class SidebarComponent {
     {
       label: 'Configuracion',
       icon: 'pi pi-cog pi-spin',
+      routerLink: '/config',
       styleClass: 'settings-item'
     }
   ];
