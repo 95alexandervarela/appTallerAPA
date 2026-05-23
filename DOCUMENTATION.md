@@ -133,6 +133,74 @@ Ejemplo:
 
 El objetivo es mantener el sidebar como punto unico de navegacion interna, sin navbar superior global ni menus horizontales.
 
+## Configuracion y Gestion de Usuarios
+
+La vista de configuracion vive en:
+
+```text
+frontend/src/app/features/config/
+```
+
+La ruta `/config` se renderiza dentro de `LayoutComponent`, por lo que el sidebar permanece visible y solo cambia el contenido derecho. Esta pantalla mantiene la estetica glass del dashboard: blur, transparencias, bordes redondeados y tipografia del sistema.
+
+### Estructura
+
+Archivos principales:
+
+```text
+config.component.ts              # Vista principal de configuracion
+config-menu.component.ts         # Submenu interno de configuracion
+users-panel.component.ts         # Panel de Gestion de usuarios
+users-panel.component.html       # Tabla y modal Crear usuario
+users-panel.component.scss       # Estilos locales de tabla y modal
+```
+
+El submenu interno incluye:
+
+- Perfil
+- Cuenta
+- Apariencia
+- Accesibilidad
+- Notificaciones
+- Usuarios
+
+### Modal Crear Usuario
+
+El boton `Crear usuario` abre un `p-dialog` de PrimeNG dentro de la misma ruta `/config`. No se crea una ruta nueva porque es un flujo interno tipo SaaS: el usuario permanece en contexto, con sidebar y layout intactos.
+
+Campos del formulario:
+
+- Nombre
+- Apellido
+- Usuario
+- Correo
+- Rol
+- Estado
+- Contraseña
+- Confirmar contraseña
+
+El campo `Usuario` se genera automaticamente con la primera letra del nombre y el primer apellido. Por ejemplo:
+
+```text
+Nombre: Alexander
+Apellido: Varela Lopez
+Usuario generado: avarela
+```
+
+Validaciones actuales de frontend:
+
+- Nombre requerido.
+- Apellido requerido.
+- Usuario requerido.
+- Rol requerido.
+- Estado requerido.
+- Contraseña requerida.
+- Confirmar contraseña requerida.
+- Correo con formato valido cuando se ingresa.
+- Contraseña y confirmacion deben coincidir.
+
+> Estado actual: el modal solo valida UI y muestra una confirmacion visual. Todavia no llama al backend ni persiste usuarios en MongoDB.
+
 ## Backend API (Help Desk Taller APA)
 
 El backend esta construido con **Node.js + Express** y se conecta a una base de datos **MongoDB** mediante **Mongoose**. Se ejecuta con **nodemon** en desarrollo para recarga automatica.

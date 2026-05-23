@@ -119,6 +119,145 @@
   text-transform: uppercase;
 }
 
+/**
+ * Modal interno de creacion: mantiene el flujo en `/config` sin ruta nueva
+ * y aplica estilos locales tipo glass para no afectar otros dialogos futuros.
+ */
+:host ::ng-deep .create-user-dialog {
+  width: min(720px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(30, 41, 88, 0.72);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .create-user-dialog .p-dialog-header,
+:host ::ng-deep .create-user-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+}
+
+:host ::ng-deep .create-user-dialog .p-dialog-header {
+  padding: 20px 22px 10px;
+}
+
+:host ::ng-deep .create-user-dialog .p-dialog-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+:host ::ng-deep .create-user-dialog .p-dialog-content {
+  padding: 0 22px 22px;
+}
+
+:host ::ng-deep .create-user-dialog .p-dialog-close-button {
+  color: #ffffff;
+}
+
+:host ::ng-deep .create-user-dialog-mask {
+  backdrop-filter: blur(8px);
+}
+
+.create-user-form {
+  display: grid;
+  gap: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.form-grid label > span {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.84rem;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.form-grid small {
+  color: #fecaca;
+  font-size: 0.76rem;
+}
+
+.form-success {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 12px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #bbf7d0;
+}
+
+:host ::ng-deep .create-user-dialog input[pInputText],
+:host ::ng-deep .create-user-dialog .p-select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+:host ::ng-deep .create-user-dialog input[pInputText] {
+  height: 42px;
+}
+
+:host ::ng-deep .create-user-dialog input[pInputText][readonly] {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+:host ::ng-deep .create-user-dialog .p-select-label {
+  color: #ffffff;
+}
+
+:host ::ng-deep .create-user-dialog .p-select-label.p-placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: end;
+  gap: 10px;
+}
+
+.cancel-user-button,
+.save-user-button {
+  border-radius: 999px !important;
+}
+
+.cancel-user-button {
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.save-user-button {
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(14, 165, 233, 0.34) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
+}
+
+.cancel-user-button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.save-user-button:hover {
+  background: rgba(14, 165, 233, 0.46) !important;
+}
+
 @media (max-width: 760px) {
   .users-header {
     flex-direction: column;
@@ -126,6 +265,10 @@
 
   .users-fields,
   .users-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }

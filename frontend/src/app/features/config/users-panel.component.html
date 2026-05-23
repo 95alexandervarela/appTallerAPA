@@ -6,7 +6,7 @@
       <p>Administra accesos simulados para el equipo de Taller.</p>
     </div>
 
-    <button pButton type="button" class="create-user-button">
+    <button pButton type="button" class="create-user-button" (click)="openCreateUserDialog()">
       <i class="pi pi-user-plus" aria-hidden="true"></i>
       <span pButtonLabel>Crear usuario</span>
     </button>
@@ -42,4 +42,148 @@
       </div>
     }
   </section>
+
+  <p-dialog
+    header="Crear usuario"
+    styleClass="create-user-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isCreateUserDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    (onHide)="closeCreateUserDialog()"
+  >
+    <form class="create-user-form" (ngSubmit)="saveCreateUser()" novalidate>
+      <div class="form-grid">
+        <label>
+          <span>Nombre</span>
+          <input
+            pInputText
+            type="text"
+            name="firstName"
+            [(ngModel)]="createUserForm.firstName"
+            autocomplete="given-name"
+            (ngModelChange)="updateGeneratedUsername()"
+          />
+          @if (isFieldInvalid('firstName')) {
+            <small>Nombre es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Apellido</span>
+          <input
+            pInputText
+            type="text"
+            name="lastName"
+            [(ngModel)]="createUserForm.lastName"
+            autocomplete="family-name"
+            (ngModelChange)="updateGeneratedUsername()"
+          />
+          @if (isFieldInvalid('lastName')) {
+            <small>Apellido es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Usuario</span>
+          <input
+            pInputText
+            type="text"
+            name="username"
+            [(ngModel)]="createUserForm.username"
+            autocomplete="username"
+            readonly
+          />
+          @if (isFieldInvalid('username')) {
+            <small>Usuario es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Correo</span>
+          <input
+            pInputText
+            type="email"
+            name="email"
+            [(ngModel)]="createUserForm.email"
+            autocomplete="email"
+          />
+          @if (isEmailInvalid()) {
+            <small>Ingresa un correo valido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Rol</span>
+          <p-select
+            name="role"
+            [options]="roleOptions"
+            [(ngModel)]="createUserForm.role"
+            placeholder="Seleccionar rol"
+          />
+          @if (isFieldInvalid('role')) {
+            <small>Rol es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Estado</span>
+          <p-select
+            name="status"
+            [options]="statusOptions"
+            [(ngModel)]="createUserForm.status"
+            placeholder="Seleccionar estado"
+          />
+          @if (isFieldInvalid('status')) {
+            <small>Estado es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Contraseña</span>
+          <input
+            pInputText
+            type="password"
+            name="password"
+            [(ngModel)]="createUserForm.password"
+            autocomplete="new-password"
+          />
+          @if (isFieldInvalid('password')) {
+            <small>Contraseña es requerida.</small>
+          }
+        </label>
+
+        <label class="form-field-wide">
+          <span>Confirmar contraseña</span>
+          <input
+            pInputText
+            type="password"
+            name="confirmPassword"
+            [(ngModel)]="createUserForm.confirmPassword"
+            autocomplete="new-password"
+          />
+          @if (isFieldInvalid('confirmPassword')) {
+            <small>Confirmar contraseña es requerido.</small>
+          } @else if (isPasswordMismatch()) {
+            <small>Las contraseñas deben coincidir.</small>
+          }
+        </label>
+      </div>
+
+      @if (createUserSuccessMessage) {
+        <p class="form-success">{{ createUserSuccessMessage }}</p>
+      }
+
+      <footer class="form-actions">
+        <button pButton type="button" class="cancel-user-button" (click)="closeCreateUserDialog()">
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button pButton type="submit" class="save-user-button">
+          <span pButtonLabel>Guardar</span>
+        </button>
+      </footer>
+    </form>
+  </p-dialog>
 </section>
