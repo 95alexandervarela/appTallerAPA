@@ -1,0 +1,3 @@
+# Archivos grandes / binarios no versionados
+*.tar.gz
+*.zip

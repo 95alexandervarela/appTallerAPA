@@ -132,3 +132,90 @@ Ejemplo:
 ```
 
 El objetivo es mantener el sidebar como punto unico de navegacion interna, sin navbar superior global ni menus horizontales.
+
+## Backend API (Help Desk Taller APA)
+
+El backend esta construido con **Node.js + Express** y se conecta a una base de datos **MongoDB** mediante **Mongoose**. Se ejecuta con **nodemon** en desarrollo para recarga automatica.
+
+### Estructura de carpetas
+
+```text
+backend/
+  server.js               # Punto de entrada principal
+  config/
+    database.js           # Conexion a MongoDB con Mongoose
+  models/
+    user.model.js         # Schema y modelo de Usuario
+  controllers/
+    user.controller.js    # Logica de negocio para usuarios
+  routes/
+    user.routes.js        # Definicion de endpoints REST
+```
+
+### Arrancar el servidor
+
+Desde la raiz del proyecto:
+
+```bash
+# Modo desarrollo con nodemon (recarga automatica)
+npm run dev
+
+# Modo produccion
+npm start
+```
+
+El servidor escucha en: `http://localhost:3080`
+
+### Variables de entorno
+
+| Variable | Valor por defecto | Descripcion |
+|---|---|---|
+| `PORT` | `3080` | Puerto del servidor Express |
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/appTallerAPA` | URI de conexion a MongoDB |
+| `NODE_ENV` | `development` | Entorno de ejecucion |
+
+### Endpoints de Usuarios
+
+Base path: `/api/users`
+
+| Metodo | Ruta | Descripcion |
+|---|---|---|
+| `GET` | `/api/users` | Obtener todos los usuarios activos |
+| `GET` | `/api/users/:id` | Obtener un usuario por ID |
+| `POST` | `/api/users` | Crear un nuevo usuario |
+| `PUT` | `/api/users/:id` | Actualizar datos de un usuario |
+| `DELETE` | `/api/users/:id` | Baja logica (soft delete) de un usuario |
+
+### Ejemplo de uso con curl
+
+```bash
+# Listar todos los usuarios
+curl http://localhost:3080/api/users
+
+# Crear un usuario
+curl -X POST http://localhost:3080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"nombre": "Juan", "email": "juan@example.com"}'
+
+# Obtener usuario por ID
+curl http://localhost:3080/api/users/<id>
+
+# Actualizar usuario
+curl -X PUT http://localhost:3080/api/users/<id> \
+  -H "Content-Type: application/json" \
+  -d '{"nombre": "Juan Actualizado"}'
+
+# Eliminar usuario (soft delete)
+curl -X DELETE http://localhost:3080/api/users/<id>
+```
+
+### Dependencias del backend
+
+Los modulos de Node.js estan instalados en el directorio padre (`../node_modules/`).
+Las dependencias principales son: `express`, `mongoose`, `nodemon`.
+
+### Manejo de errores
+
+- Rutas no encontradas devuelven `404` con `{ "error": "Ruta no encontrada" }`.
+- Errores internos devuelven `500` con `{ "error": "Ocurrio un error interno en el servidor" }`.
+- Si MongoDB no esta disponible al iniciar, el proceso termina con codigo de salida `1`.
