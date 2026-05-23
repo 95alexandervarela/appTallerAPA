@@ -155,6 +155,32 @@
   text-decoration: underline;
 }
 
+/**
+ * Pie visual del login: conserva la linea divisoria sutil y muestra solo la
+ * leyenda de desarrollo sin intervenir la tarjeta ni el formulario.
+ */
+.login-footer {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  display: grid;
+  gap: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.82rem;
+}
+
+.login-footer-line {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.login-footer-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 @media (max-width: 520px) {
   .login-card {
     padding: 30px 22px;
