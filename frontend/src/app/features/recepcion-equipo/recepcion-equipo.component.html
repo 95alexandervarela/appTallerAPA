@@ -1,0 +1,176 @@
+<section class="recepcion-shell">
+  <header class="section-header">
+    <div>
+      <span>Sistema de Servicio Tecnico</span>
+      <h1>Recepcion de equipo</h1>
+      <p>Registra el ingreso inicial antes de enviar el equipo al taller.</p>
+    </div>
+    <!-- Se añadió logo emusLogo.png al header derecho de Recepción, alineado con la píldora y con espaciado controlado, sin afectar otros componentes. -->
+    <div class="header-right">
+      <p-tag value="Recepcion" severity="info" />
+      <img src="/imagenes/iconos/emusLogo.png" alt="Logo EMUS" class="emus-logo" />
+    </div>
+  </header>
+
+  <form class="recepcion-form" novalidate>
+    <section class="form-card">
+      <div class="card-title">
+        <h2>Datos del caso</h2>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Numero de caso</span>
+          <input pInputText type="text" name="numeroCaso" [(ngModel)]="form.numeroCaso" />
+        </label>
+
+        <div class="form-field">
+          <span>Origen del equipo</span>
+          <p-select
+            name="origenEquipo"
+            [options]="origenOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="form.origenEquipo"
+            placeholder="Seleccionar origen"
+          />
+        </div>
+
+        <label>
+          <span>Referencia SAP</span>
+          <input pInputText type="text" name="referenciaSap" [(ngModel)]="form.referenciaSap" />
+        </label>
+
+        <div class="form-field">
+          <span>Estado</span>
+          <p-select
+            name="estadoRecepcion"
+            [options]="estadoOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="form.estadoRecepcion"
+            placeholder="Seleccionar estado"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="card-title">
+        <h2>Cliente o contacto</h2>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Nombre del cliente</span>
+          <input pInputText type="text" name="nombreCliente" [(ngModel)]="form.nombreCliente" />
+        </label>
+
+        <label>
+          <span>Telefono</span>
+          <input pInputText type="text" name="telefonoCliente" [(ngModel)]="form.telefonoCliente" />
+        </label>
+
+        <label>
+          <span>Correo</span>
+          <input pInputText type="email" name="correoCliente" [(ngModel)]="form.correoCliente" />
+        </label>
+
+        <label>
+          <span>Sucursal de origen</span>
+          <input pInputText type="text" name="sucursalOrigen" [(ngModel)]="form.sucursalOrigen" />
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="card-title">
+        <h2>Equipo recibido</h2>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Tipo de equipo</span>
+          <input pInputText type="text" name="tipoEquipo" [(ngModel)]="form.tipoEquipo" />
+        </label>
+
+        <label>
+          <span>Marca</span>
+          <input pInputText type="text" name="marcaEquipo" [(ngModel)]="form.marcaEquipo" />
+        </label>
+
+        <label>
+          <span>Modelo</span>
+          <input pInputText type="text" name="modeloEquipo" [(ngModel)]="form.modeloEquipo" />
+        </label>
+
+        <label>
+          <span>Serie</span>
+          <input pInputText type="text" name="serieEquipo" [(ngModel)]="form.serieEquipo" />
+        </label>
+
+        <label class="form-field-wide">
+          <span>Falla reportada</span>
+          <textarea name="fallaReportada" [(ngModel)]="form.fallaReportada"></textarea>
+        </label>
+
+        <label class="form-field-wide">
+          <span>Condicion fisica inicial</span>
+          <textarea name="condicionFisica" [(ngModel)]="form.condicionFisica"></textarea>
+        </label>
+
+        <label class="form-field-wide">
+          <span>Accesorios entregados</span>
+          <textarea name="accesoriosEntregados" [(ngModel)]="form.accesoriosEntregados"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="card-title">
+        <h2>Control de recepcion</h2>
+      </div>
+
+      <div class="check-grid">
+        <label>
+          <input type="checkbox" name="datosCompletos" [(ngModel)]="form.datosCompletos" />
+          <span>Datos completos</span>
+        </label>
+
+        <label>
+          <input type="checkbox" name="esCasoEspecial" [(ngModel)]="form.esCasoEspecial" />
+          <span>Caso especial</span>
+        </label>
+
+        <label>
+          <input type="checkbox" name="ingresoAutorizado" [(ngModel)]="form.ingresoAutorizado" />
+          <span>Ingreso autorizado</span>
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            name="comprobanteEntregado"
+            [(ngModel)]="form.comprobanteEntregado"
+          />
+          <span>Comprobante entregado</span>
+        </label>
+
+        <label>
+          <input type="checkbox" name="equipoEtiquetado" [(ngModel)]="form.equipoEtiquetado" />
+          <span>Equipo etiquetado</span>
+        </label>
+      </div>
+
+      <footer class="form-actions">
+        <button pButton type="button" class="cancel-button">
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button pButton type="button" class="save-button">
+          <i class="pi pi-save" aria-hidden="true"></i>
+          <span pButtonLabel>Guardar recepcion</span>
+        </button>
+      </footer>
+    </section>
+  </form>
+</section>

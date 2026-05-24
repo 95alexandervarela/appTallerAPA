@@ -40,6 +40,56 @@
   background: rgba(14, 165, 233, 0.46) !important;
 }
 
+.users-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-users-button {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.refresh-users-button:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.edit-user-button {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.edit-user-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.edit-user-button:disabled {
+  opacity: 0.48;
+}
+
+.delete-user-button {
+  gap: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.24) !important;
+  border-radius: 999px !important;
+  background: rgba(248, 113, 113, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.delete-user-button:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.2) !important;
+}
+
+.delete-user-button:disabled {
+  opacity: 0.48;
+}
+
 .users-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -71,6 +121,10 @@
   min-height: 58px;
   padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
 }
 
 /**
@@ -111,12 +165,51 @@
   border-bottom: 0;
 }
 
+.users-row:not(.users-row-head):not(.users-row-message):hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 3px 0 0 rgba(14, 165, 233, 0.28);
+}
+
+.users-row-selected {
+  background: rgba(14, 165, 233, 0.16);
+  box-shadow: inset 3px 0 0 rgba(14, 165, 233, 0.58);
+}
+
+.user-name-button {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+}
+
+.user-name-button:hover {
+  color: #bae6fd;
+  text-decoration: underline;
+}
+
 .users-row-head {
   min-height: 42px;
   background: rgba(255, 255, 255, 0.06);
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.users-row-message {
+  grid-template-columns: 1fr;
+}
+
+.users-row-message span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.users-row-error span {
+  color: #fecaca;
 }
 
 /**
@@ -172,12 +265,14 @@
   gap: 14px;
 }
 
-.form-grid label {
+.form-grid label,
+.form-field {
   display: grid;
   gap: 8px;
 }
 
-.form-grid label > span {
+.form-grid label > span,
+.form-field > span {
   color: rgba(255, 255, 255, 0.76);
   font-size: 0.84rem;
 }
@@ -200,6 +295,15 @@
   color: #bbf7d0;
 }
 
+.form-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  border-radius: 12px;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+
 :host ::ng-deep .create-user-dialog input[pInputText],
 :host ::ng-deep .create-user-dialog .p-select {
   width: 100%;
@@ -211,6 +315,11 @@
 
 :host ::ng-deep .create-user-dialog input[pInputText] {
   height: 42px;
+}
+
+:host ::ng-deep .create-user-dialog .p-select {
+  min-height: 42px;
+  align-items: center;
 }
 
 :host ::ng-deep .create-user-dialog input[pInputText][readonly] {
@@ -233,7 +342,8 @@
 }
 
 .cancel-user-button,
-.save-user-button {
+.save-user-button,
+.delete-confirm-button {
   border-radius: 999px !important;
 }
 
@@ -250,12 +360,150 @@
   box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
 }
 
+.delete-confirm-button {
+  border: 1px solid rgba(248, 113, 113, 0.32) !important;
+  background: rgba(248, 113, 113, 0.22) !important;
+  color: #ffffff !important;
+}
+
 .cancel-user-button:hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
 
 .save-user-button:hover {
   background: rgba(14, 165, 233, 0.46) !important;
+}
+
+.delete-confirm-button:hover {
+  background: rgba(248, 113, 113, 0.32) !important;
+}
+
+:host ::ng-deep .success-user-dialog {
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 22px;
+  background: rgba(20, 30, 55, 0.82);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.42);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .success-user-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+  padding: 28px;
+}
+
+:host ::ng-deep .user-info-dialog {
+  width: min(520px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(30, 41, 88, 0.78);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .user-info-dialog .p-dialog-header,
+:host ::ng-deep .user-info-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+}
+
+.user-info-content {
+  display: grid;
+  gap: 12px;
+}
+
+.user-info-content div {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px;
+}
+
+.user-info-content span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+}
+
+.user-info-content strong {
+  color: #ffffff;
+}
+
+.delete-user-content {
+  display: grid;
+  gap: 14px;
+  color: #ffffff;
+}
+
+.delete-user-content > i {
+  color: #fca5a5;
+  font-size: 2rem;
+}
+
+.delete-user-content p {
+  margin: 0;
+}
+
+.delete-user-content > span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.success-user-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.success-user-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.16);
+  color: #bbf7d0;
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.delete-success-icon {
+  border-color: rgba(14, 165, 233, 0.32);
+  background: rgba(14, 165, 233, 0.16);
+  color: #bae6fd;
+}
+
+.success-user-content h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.45rem;
+}
+
+.success-user-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.success-ok-button {
+  min-width: 110px;
+  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+  border-radius: 999px !important;
+  background: rgba(52, 211, 153, 0.28) !important;
+  color: #ffffff !important;
+  margin-top: 8px;
+}
+
+.success-ok-button:hover {
+  background: rgba(52, 211, 153, 0.38) !important;
 }
 
 @media (max-width: 760px) {

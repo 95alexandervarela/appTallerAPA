@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TagModule } from 'primeng/tag';
 import { ConfigMenuComponent } from './config-menu.component';
 import { ConfigOption } from './config.types';
 import { UsersPanelComponent } from './users-panel.component';
@@ -12,7 +13,7 @@ import { UsersPanelComponent } from './users-panel.component';
  */
 @Component({
   selector: 'app-config',
-  imports: [ConfigMenuComponent, UsersPanelComponent],
+  imports: [ConfigMenuComponent, TagModule, UsersPanelComponent],
   templateUrl: './config.component.html',
   styleUrl: './config.component.scss'
 })

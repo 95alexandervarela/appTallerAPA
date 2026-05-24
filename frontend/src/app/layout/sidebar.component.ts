@@ -25,8 +25,14 @@ export class SidebarComponent {
       styleClass: 'active-item'
     },
     {
+      label: 'Recepcion de equipo',
+      icon: 'pi pi-desktop',
+      routerLink: '/recepcion-equipo'
+    },
+    {
       label: 'Tickets',
-      icon: 'pi pi-inbox'
+      icon: 'pi pi-inbox',
+      routerLink: '/tickets'
     },
     {
       label: 'Dashboard',

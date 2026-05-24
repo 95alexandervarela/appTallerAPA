@@ -1,4 +1,4 @@
-const Usuario = require('../models/user.model');
+const Usuario = require("../models/user.model");
 
 /**
  * Crea un nuevo usuario en el sistema.
@@ -17,29 +17,68 @@ const Usuario = require('../models/user.model');
  */
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, passwordHash, password, nombre_completo, rol_id } = req.body;
+    const { username, email, passwordHash, password, nombre_completo, rol_id } =
+      req.body;
+
+    console.log("📨 Datos recibidos:", {
+      username,
+      email,
+      nombre_completo,
+      rol_id,
+      password: password ? "✓" : "✗",
+    });
 
     // Acepta tanto 'password' como 'passwordHash' del cuerpo para mayor flexibilidad
     const rawPassword = password || passwordHash;
 
-    if (!rawPassword) {
-      return res.status(400).json({ error: 'La contraseña es requerida' });
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: "El nombre de usuario es requerido" });
     }
 
-    // Verificar si el usuario o email ya existe
-    const checkDuplicate = await Usuario.findOne({
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "El correo electrónico es requerido" });
+    }
+
+    if (!nombre_completo || !nombre_completo.trim()) {
+      return res.status(400).json({ error: "El nombre completo es requerido" });
+    }
+
+    if (!rawPassword) {
+      console.log("❌ Error: falta contraseña");
+      return res.status(400).json({ error: "La contraseña es requerida" });
+    }
+
+    if (!rol_id || !rol_id.trim()) {
+      return res.status(400).json({ error: "El rol es requerido" });
+    }
+
+    const duplicateQuery = {
       $or: [
         { username: username.toLowerCase().trim() },
-        { email: email.toLowerCase().trim() }
-      ]
+        { email: email.toLowerCase().trim() },
+      ],
+    };
+
+    // Limpiar registros viejos eliminados logicamente para liberar indices unicos.
+    await Usuario.collection.deleteMany({
+      ...duplicateQuery,
+      fecha_eliminacion: { $ne: null },
     });
 
-    if (checkDuplicate) {
-      if (checkDuplicate.username === username.toLowerCase().trim()) {
-        return res.status(400).json({ error: 'El nombre de usuario ya está registrado' });
+    // Buscar directo en la coleccion para detectar registros activos duplicados.
+    const existingUser = await Usuario.collection.findOne(duplicateQuery);
+
+    if (existingUser) {
+      if (existingUser.username === username.toLowerCase().trim()) {
+        return res
+          .status(400)
+          .json({ error: "El nombre de usuario ya está registrado" });
       }
-      if (checkDuplicate.email === email.toLowerCase().trim()) {
-        return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+
+      if (existingUser.email === email.toLowerCase().trim()) {
+        return res
+          .status(400)
+          .json({ error: "El correo electrónico ya está registrado" });
       }
     }
 
@@ -48,7 +87,7 @@ exports.createUser = async (req, res) => {
       email,
       passwordHash: rawPassword, // Se hasheará en el hook pre('save') del modelo
       nombre_completo,
-      rol_id
+      rol_id,
     });
 
     await newUser.save();
@@ -58,10 +97,20 @@ exports.createUser = async (req, res) => {
     delete responseUser.passwordHash;
 
     res.status(201).json({
-      message: 'Usuario creado exitosamente',
-      user: responseUser
+      message: "Usuario creado exitosamente",
+      user: responseUser,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      const duplicatedField = Object.keys(error.keyPattern || {})[0];
+      const duplicatedLabel =
+        duplicatedField === "username" ? "nombre de usuario" : "correo electrónico";
+
+      return res.status(400).json({
+        error: `El ${duplicatedLabel} ya está registrado`,
+      });
+    }
+
     res.status(400).json({ error: error.message });
   }
 };
@@ -82,7 +131,7 @@ exports.createUser = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     // El middleware pre('find') del modelo filtra automáticamente fecha_eliminacion: null
-    const users = await Usuario.find({}, '-passwordHash');
+    const users = await Usuario.find({}, "-passwordHash");
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -104,12 +153,12 @@ exports.getUsers = async (req, res) => {
  */
 exports.getUserById = async (req, res) => {
   try {
-    const user = await Usuario.findById(req.params.id, '-passwordHash');
-    
+    const user = await Usuario.findById(req.params.id, "-passwordHash");
+
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
-    
+
     res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -133,27 +182,43 @@ exports.getUserById = async (req, res) => {
  */
 exports.updateUser = async (req, res) => {
   try {
-    const { username, email, passwordHash, password, nombre_completo, rol_id, activo } = req.body;
-    
+    const {
+      username,
+      email,
+      passwordHash,
+      password,
+      nombre_completo,
+      rol_id,
+      activo,
+    } = req.body;
+
     const user = await Usuario.findById(req.params.id);
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     // Validar duplicados si se va a actualizar username o email
     if (username && username.toLowerCase().trim() !== user.username) {
-      const duplicateUsername = await Usuario.findOne({ username: username.toLowerCase().trim() });
+      const duplicateUsername = await Usuario.findOne({
+        username: username.toLowerCase().trim(),
+      });
       if (duplicateUsername) {
-        return res.status(400).json({ error: 'El nombre de usuario ya está en uso' });
+        return res
+          .status(400)
+          .json({ error: "El nombre de usuario ya está en uso" });
       }
       user.username = username;
     }
 
     if (email && email.toLowerCase().trim() !== user.email) {
-      const duplicateEmail = await Usuario.findOne({ email: email.toLowerCase().trim() });
+      const duplicateEmail = await Usuario.findOne({
+        email: email.toLowerCase().trim(),
+      });
       if (duplicateEmail) {
-        return res.status(400).json({ error: 'El correo electrónico ya está en uso' });
+        return res
+          .status(400)
+          .json({ error: "El correo electrónico ya está en uso" });
       }
       user.email = email;
     }
@@ -175,8 +240,8 @@ exports.updateUser = async (req, res) => {
     delete responseUser.passwordHash;
 
     res.status(200).json({
-      message: 'Usuario actualizado exitosamente',
-      user: responseUser
+      message: "Usuario actualizado exitosamente",
+      user: responseUser,
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -184,12 +249,11 @@ exports.updateUser = async (req, res) => {
 };
 
 /**
- * Realiza la eliminación lógica (Soft Delete) de un usuario en el sistema.
+ * Elimina definitivamente un usuario del sistema.
  *
  * @remarks
- * En lugar de borrar físicamente el documento de la base de datos, desactiva la cuenta
- * estableciendo `activo` en `false` y almacena el momento de la baja en `fecha_eliminacion`.
- * Esto previene que aparezca en las búsquedas del sistema a la vez que preserva el historial.
+ * Borra físicamente el documento de MongoDB para liberar los índices únicos de
+ * `username` y `email`, permitiendo volver a registrar el mismo usuario si fuera necesario.
  *
  * @async
  * @function deleteUser
@@ -200,19 +264,15 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const user = await Usuario.findById(req.params.id);
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // Aplicar eliminación lógica
-    user.activo = false;
-    user.fecha_eliminacion = Date.now();
-    
-    await user.save();
+    await Usuario.deleteOne({ _id: req.params.id });
 
     res.status(200).json({
-      message: 'Usuario eliminado lógicamente del sistema'
+      message: "Usuario eliminado definitivamente del sistema",
     });
   } catch (error) {
     res.status(400).json({ error: error.message });

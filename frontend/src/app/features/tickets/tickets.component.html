@@ -1,0 +1,287 @@
+<section class="tickets-shell">
+  <header class="section-header">
+    <div>
+      <span>Sistema de Servicio Tecnico</span>
+      <h1>Tickets</h1>
+      <p>Gestiona busqueda, creacion y seguimiento inicial de casos EMUS.</p>
+    </div>
+    <div class="header-right">
+      <p-tag value="Tickets" severity="info" />
+      <img src="/imagenes/iconos/emusLogo.png" alt="Logo EMUS" class="emus-logo" />
+    </div>
+  </header>
+
+  @if (vistaActual === 'dashboard') {
+    <section class="tickets-dashboard">
+      <article class="quick-actions-card">
+        <div class="card-title">
+          <span>Acciones rapidas</span>
+          <h2>Panel de tickets</h2>
+        </div>
+
+        <div class="quick-actions">
+          <label class="search-action">
+            <i class="pi pi-search" aria-hidden="true"></i>
+            <input
+              pInputText
+              type="text"
+              name="busquedaTicket"
+              [(ngModel)]="busquedaTicket"
+              placeholder="Buscar ticket"
+            />
+          </label>
+
+          <button pButton type="button" class="quick-action-button" (click)="abrirFormulario()">
+            <i class="pi pi-plus-circle" aria-hidden="true"></i>
+            <span pButtonLabel>Crear ticket</span>
+          </button>
+        </div>
+      </article>
+
+      <article class="latest-card">
+        <div class="card-title">
+          <span>Ultimos tickets</span>
+          <h2>Actividad reciente</h2>
+        </div>
+
+        <div class="ticket-list">
+          @for (ticket of ticketsFiltrados; track ticket.numeroCaso) {
+            <div class="ticket-row">
+              <span>{{ ticket.numeroCaso }}</span>
+              <strong>{{ ticket.cliente }}</strong>
+              <em>{{ ticket.equipo }}</em>
+              <p-tag [value]="ticket.estado" severity="info" />
+            </div>
+          } @empty {
+            <div class="empty-row">No hay tickets para mostrar.</div>
+          }
+        </div>
+      </article>
+    </section>
+  } @else {
+    <form class="ticket-form" (ngSubmit)="guardarTicket()" novalidate>
+      <section class="form-card">
+        <div class="card-title">
+          <h2>Datos del caso</h2>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Numero de caso</span>
+            <input
+              pInputText
+              type="text"
+              name="numeroCaso"
+              [(ngModel)]="ticketForm.numeroCaso"
+              readonly
+            />
+          </label>
+
+          <div class="form-field">
+            <span>Origen del equipo</span>
+            <p-select
+              name="origenEquipo"
+              [options]="origenOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="ticketForm.origenEquipo"
+              placeholder="Seleccionar origen"
+            />
+          </div>
+
+          <label>
+            <span>Referencia SAP</span>
+            <input
+              pInputText
+              type="text"
+              name="referenciaSap"
+              [(ngModel)]="ticketForm.referenciaSap"
+            />
+          </label>
+
+          <div class="form-field">
+            <span>Estado</span>
+            <p-select
+              name="estadoRecepcion"
+              [options]="estadoOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="ticketForm.estadoRecepcion"
+              placeholder="Seleccionar estado"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="card-title">
+          <h2>Cliente o contacto</h2>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Nombre del cliente</span>
+            <input
+              pInputText
+              type="text"
+              name="nombreCliente"
+              [(ngModel)]="ticketForm.nombreCliente"
+            />
+          </label>
+
+          <label>
+            <span>Telefono</span>
+            <input
+              pInputText
+              type="text"
+              name="telefonoCliente"
+              [(ngModel)]="ticketForm.telefonoCliente"
+            />
+          </label>
+
+          <label>
+            <span>Correo</span>
+            <input
+              pInputText
+              type="email"
+              name="correoCliente"
+              [(ngModel)]="ticketForm.correoCliente"
+            />
+          </label>
+
+          <label>
+            <span>Sucursal de origen</span>
+            <input
+              pInputText
+              type="text"
+              name="sucursalOrigen"
+              [(ngModel)]="ticketForm.sucursalOrigen"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="card-title">
+          <h2>Equipo recibido</h2>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Tipo de equipo</span>
+            <input pInputText type="text" name="tipoEquipo" [(ngModel)]="ticketForm.tipoEquipo" />
+          </label>
+
+          <label>
+            <span>Marca</span>
+            <input pInputText type="text" name="marcaEquipo" [(ngModel)]="ticketForm.marcaEquipo" />
+          </label>
+
+          <label>
+            <span>Modelo</span>
+            <input
+              pInputText
+              type="text"
+              name="modeloEquipo"
+              [(ngModel)]="ticketForm.modeloEquipo"
+            />
+          </label>
+
+          <label>
+            <span>Serie</span>
+            <input pInputText type="text" name="serieEquipo" [(ngModel)]="ticketForm.serieEquipo" />
+          </label>
+
+          <label class="form-field-wide">
+            <span>Falla reportada</span>
+            <textarea name="fallaReportada" [(ngModel)]="ticketForm.fallaReportada"></textarea>
+          </label>
+
+          <label class="form-field-wide">
+            <span>Condicion fisica inicial</span>
+            <textarea name="condicionFisica" [(ngModel)]="ticketForm.condicionFisica"></textarea>
+          </label>
+
+          <label class="form-field-wide">
+            <span>Accesorios entregados</span>
+            <textarea
+              name="accesoriosEntregados"
+              [(ngModel)]="ticketForm.accesoriosEntregados"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="card-title">
+          <h2>Control de recepcion</h2>
+        </div>
+
+        <div class="check-grid">
+          <label>
+            <input type="checkbox" name="datosCompletos" [(ngModel)]="ticketForm.datosCompletos" />
+            <span>Datos completos</span>
+          </label>
+
+          <label>
+            <input type="checkbox" name="esCasoEspecial" [(ngModel)]="ticketForm.esCasoEspecial" />
+            <span>Caso especial</span>
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              name="ingresoAutorizado"
+              [(ngModel)]="ticketForm.ingresoAutorizado"
+            />
+            <span>Ingreso autorizado</span>
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              name="comprobanteEntregado"
+              [(ngModel)]="ticketForm.comprobanteEntregado"
+            />
+            <span>Comprobante entregado</span>
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              name="equipoEtiquetado"
+              [(ngModel)]="ticketForm.equipoEtiquetado"
+            />
+            <span>Equipo etiquetado</span>
+          </label>
+        </div>
+
+        @if (ticketErrorMessage) {
+          <p class="form-error">{{ ticketErrorMessage }}</p>
+        }
+
+        <footer class="form-actions">
+          <button
+            pButton
+            type="button"
+            class="cancel-button"
+            [disabled]="isSavingTicket"
+            (click)="cancelarCreacion()"
+          >
+            <span pButtonLabel>Cancelar</span>
+          </button>
+          <button
+            pButton
+            type="submit"
+            class="save-button"
+            [loading]="isSavingTicket"
+            [disabled]="isSavingTicket"
+          >
+            <i class="pi pi-save" aria-hidden="true"></i>
+            <span pButtonLabel>Guardar</span>
+          </button>
+        </footer>
+      </section>
+    </form>
+  }
+</section>

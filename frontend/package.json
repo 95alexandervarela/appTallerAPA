@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "../../node_modules/.bin/ng",
-    "start": "../../node_modules/.bin/ng serve",
+    "start": "../../node_modules/.bin/ng serve --proxy-config proxy.conf.json",
     "build": "../../node_modules/.bin/ng build",
     "watch": "../../node_modules/.bin/ng build --watch --configuration development",
     "test": "../../node_modules/.bin/ng test"
@@ -17,6 +17,9 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@primeuix/themes": "^2.0.3",
+    "primeicons": "^7.0.0",
+    "primeng": "^21.1.8",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -2,6 +2,7 @@
   "watch": [
     "backend/server.js",
     "backend/config",
+    "backend/controllers",
     "backend/models",
     "backend/routes"
   ],

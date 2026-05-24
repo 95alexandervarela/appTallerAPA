@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { ConfigComponent } from './features/config/config.component';
 import { HomeComponent } from './features/home/home.component';
+import { RecepcionEquipoComponent } from './features/recepcion-equipo/recepcion-equipo.component';
+import { TicketsComponent } from './features/tickets/tickets.component';
 import { LayoutComponent } from './layout/layout.component';
 import { Login } from './login/login';
 
@@ -24,6 +26,26 @@ export const routes: Routes = [
       {
         path: '',
         component: HomeComponent
+      }
+    ]
+  },
+  {
+    path: 'recepcion-equipo',
+    component: LayoutComponent,
+    children: [
+      {
+        path: '',
+        component: RecepcionEquipoComponent
+      }
+    ]
+  },
+  {
+    path: 'tickets',
+    component: LayoutComponent,
+    children: [
+      {
+        path: '',
+        component: TicketsComponent
       }
     ]
   },

@@ -6,10 +6,45 @@
       <p>Administra accesos simulados para el equipo de Taller.</p>
     </div>
 
-    <button pButton type="button" class="create-user-button" (click)="openCreateUserDialog()">
-      <i class="pi pi-user-plus" aria-hidden="true"></i>
-      <span pButtonLabel>Crear usuario</span>
-    </button>
+    <div class="users-header-actions">
+      <button
+        pButton
+        type="button"
+        class="refresh-users-button"
+        [disabled]="isLoadingUsers"
+        (click)="refreshUsers()"
+      >
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        <span pButtonLabel>Recargar</span>
+      </button>
+
+      <button
+        pButton
+        type="button"
+        class="edit-user-button"
+        [disabled]="!selectedUser"
+        (click)="openEditUserDialog()"
+      >
+        <i class="pi pi-user-edit" aria-hidden="true"></i>
+        <span pButtonLabel>Editar usuario</span>
+      </button>
+
+      <button
+        pButton
+        type="button"
+        class="delete-user-button"
+        [disabled]="!selectedUser"
+        (click)="openDeleteUserDialog()"
+      >
+        <i class="pi pi-trash" aria-hidden="true"></i>
+        <span pButtonLabel>Eliminar</span>
+      </button>
+
+      <button pButton type="button" class="create-user-button" (click)="openCreateUserDialog()">
+        <i class="pi pi-user-plus" aria-hidden="true"></i>
+        <span pButtonLabel>Crear usuario</span>
+      </button>
+    </div>
   </header>
 
   <section class="users-fields" aria-label="Campos simulados de usuarios">
@@ -34,12 +69,38 @@
       <span>Estado</span>
     </div>
 
-    @for (user of users; track user.name) {
-      <div class="users-row">
-        <strong>{{ user.name }}</strong>
+    @if (isLoadingUsers && !users.length) {
+      <div class="users-row users-row-message">
+        <span>Cargando usuarios...</span>
+      </div>
+    } @else if (usersLoadErrorMessage) {
+      <div class="users-row users-row-message users-row-error">
+        <span>{{ usersLoadErrorMessage }}</span>
+      </div>
+    }
+
+    @for (user of users; track user.id) {
+      <div
+        class="users-row"
+        [class.users-row-selected]="selectedUser?.id === user.id"
+        (click)="selectUser(user)"
+      >
+        <button
+          type="button"
+          class="user-name-button"
+          (click)="$event.stopPropagation(); openUserInfoDialog(user)"
+        >
+          {{ user.name }}
+        </button>
         <span>{{ user.role }}</span>
         <p-tag [value]="user.status" [severity]="user.severity" />
       </div>
+    } @empty {
+      @if (!isLoadingUsers && !usersLoadErrorMessage) {
+        <div class="users-row users-row-message">
+          <span>No hay usuarios registrados.</span>
+        </div>
+      }
     }
   </section>
 
@@ -110,36 +171,27 @@
             [(ngModel)]="createUserForm.email"
             autocomplete="email"
           />
-          @if (isEmailInvalid()) {
+          @if (isFieldInvalid('email')) {
+            <small>Correo es requerido.</small>
+          } @else if (isEmailInvalid()) {
             <small>Ingresa un correo valido.</small>
           }
         </label>
 
-        <label>
+        <div class="form-field">
           <span>Rol</span>
           <p-select
             name="role"
             [options]="roleOptions"
+            optionLabel="label"
+            optionValue="label"
             [(ngModel)]="createUserForm.role"
             placeholder="Seleccionar rol"
           />
           @if (isFieldInvalid('role')) {
             <small>Rol es requerido.</small>
           }
-        </label>
-
-        <label>
-          <span>Estado</span>
-          <p-select
-            name="status"
-            [options]="statusOptions"
-            [(ngModel)]="createUserForm.status"
-            placeholder="Seleccionar estado"
-          />
-          @if (isFieldInvalid('status')) {
-            <small>Estado es requerido.</small>
-          }
-        </label>
+        </div>
 
         <label>
           <span>Contraseña</span>
@@ -176,14 +228,267 @@
         <p class="form-success">{{ createUserSuccessMessage }}</p>
       }
 
+      @if (createUserErrorMessage) {
+        <p class="form-error">{{ createUserErrorMessage }}</p>
+      }
+
       <footer class="form-actions">
-        <button pButton type="button" class="cancel-user-button" (click)="closeCreateUserDialog()">
+        <button
+          pButton
+          type="button"
+          class="cancel-user-button"
+          (click)="closeCreateUserDialog()"
+          [disabled]="isLoadingCreateUser"
+        >
           <span pButtonLabel>Cancelar</span>
         </button>
-        <button pButton type="submit" class="save-user-button">
+        <button
+          pButton
+          type="submit"
+          class="save-user-button"
+          [loading]="isLoadingCreateUser"
+          [disabled]="isLoadingCreateUser"
+        >
           <span pButtonLabel>Guardar</span>
         </button>
       </footer>
     </form>
+  </p-dialog>
+
+  <p-dialog
+    styleClass="success-user-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isSuccessDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="false"
+  >
+    <div class="success-user-content">
+      <span class="success-user-icon" aria-hidden="true">☺</span>
+      <h3>Usuario agregado con éxito</h3>
+      <p>El nuevo usuario ya está disponible en la gestión de usuarios.</p>
+
+      <button pButton type="button" class="success-ok-button" (click)="closeSuccessDialog()">
+        <span pButtonLabel>OK</span>
+      </button>
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    header="Información del usuario"
+    styleClass="user-info-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isUserInfoDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    @if (selectedUser) {
+      <div class="user-info-content">
+        <div>
+          <span>Nombre completo</span>
+          <strong>{{ selectedUser.name }}</strong>
+        </div>
+        <div>
+          <span>Usuario</span>
+          <strong>{{ selectedUser.username }}</strong>
+        </div>
+        <div>
+          <span>Correo</span>
+          <strong>{{ selectedUser.email }}</strong>
+        </div>
+        <div>
+          <span>Rol</span>
+          <strong>{{ selectedUser.role }}</strong>
+        </div>
+        <div>
+          <span>Estado</span>
+          <strong>{{ selectedUser.status }}</strong>
+        </div>
+      </div>
+    }
+  </p-dialog>
+
+  <p-dialog
+    header="Editar usuario"
+    styleClass="create-user-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isEditUserDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    (onHide)="closeEditUserDialog()"
+  >
+    <form class="create-user-form" (ngSubmit)="saveEditUser()" novalidate>
+      <div class="form-grid">
+        <div class="form-field form-field-wide">
+          <span>Seleccionar usuario</span>
+          <p-select
+            name="editUserId"
+            [options]="users"
+            optionLabel="name"
+            optionValue="id"
+            [(ngModel)]="editUserForm.userId"
+            placeholder="Seleccionar usuario"
+            (ngModelChange)="onEditUserSelected($event)"
+          />
+          @if (isEditFieldInvalid('userId')) {
+            <small>Selecciona un usuario.</small>
+          }
+        </div>
+
+        <label class="form-field-wide">
+          <span>Nombre completo</span>
+          <input
+            pInputText
+            type="text"
+            name="editNombreCompleto"
+            [(ngModel)]="editUserForm.nombre_completo"
+          />
+          @if (isEditFieldInvalid('nombre_completo')) {
+            <small>Nombre completo es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Correo</span>
+          <input
+            pInputText
+            type="email"
+            name="editEmail"
+            [(ngModel)]="editUserForm.email"
+          />
+          @if (isEditFieldInvalid('email')) {
+            <small>Correo es requerido.</small>
+          } @else if (isEditEmailInvalid()) {
+            <small>Ingresa un correo valido.</small>
+          }
+        </label>
+
+        <div class="form-field">
+          <span>Rol</span>
+          <p-select
+            name="editRole"
+            [options]="roleOptions"
+            optionLabel="label"
+            optionValue="label"
+            [(ngModel)]="editUserForm.role"
+            placeholder="Seleccionar rol"
+          />
+          @if (isEditFieldInvalid('role')) {
+            <small>Rol es requerido.</small>
+          }
+        </div>
+
+        <div class="form-field">
+          <span>Estado</span>
+          <p-select
+            name="editStatus"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="editUserForm.status"
+            placeholder="Seleccionar estado"
+          />
+          @if (isEditFieldInvalid('status')) {
+            <small>Estado es requerido.</small>
+          }
+        </div>
+      </div>
+
+      @if (editUserErrorMessage) {
+        <p class="form-error">{{ editUserErrorMessage }}</p>
+      }
+
+      <footer class="form-actions">
+        <button
+          pButton
+          type="button"
+          class="cancel-user-button"
+          (click)="closeEditUserDialog()"
+          [disabled]="isLoadingEditUser"
+        >
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button
+          pButton
+          type="submit"
+          class="save-user-button"
+          [loading]="isLoadingEditUser"
+          [disabled]="isLoadingEditUser"
+        >
+          <span pButtonLabel>Guardar cambios</span>
+        </button>
+      </footer>
+    </form>
+  </p-dialog>
+
+  <p-dialog
+    header="Eliminar usuario"
+    styleClass="user-info-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isDeleteUserDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    @if (selectedUser) {
+      <div class="delete-user-content">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        <p>
+          ¿Deseas eliminar el usuario
+          <strong>{{ selectedUser.name }}</strong>?
+        </p>
+        <span>Esta acción borrará el registro y podrás volver a agregarlo si lo necesitas.</span>
+
+        @if (deleteUserErrorMessage) {
+          <p class="form-error">{{ deleteUserErrorMessage }}</p>
+        }
+
+        <footer class="form-actions">
+          <button
+            pButton
+            type="button"
+            class="cancel-user-button"
+            [disabled]="isLoadingDeleteUser"
+            (click)="closeDeleteUserDialog()"
+          >
+            <span pButtonLabel>Cancelar</span>
+          </button>
+          <button
+            pButton
+            type="button"
+            class="delete-confirm-button"
+            [loading]="isLoadingDeleteUser"
+            [disabled]="isLoadingDeleteUser"
+            (click)="deleteSelectedUser()"
+          >
+            <span pButtonLabel>Eliminar</span>
+          </button>
+        </footer>
+      </div>
+    }
+  </p-dialog>
+
+  <p-dialog
+    styleClass="success-user-dialog"
+    maskStyleClass="create-user-dialog-mask"
+    [(visible)]="isDeleteSuccessDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="false"
+  >
+    <div class="success-user-content">
+      <span class="success-user-icon delete-success-icon" aria-hidden="true">✓</span>
+      <h3>Usuario eliminado con éxito</h3>
+      <p>{{ deletedUserName }} fue borrado del registro de usuarios.</p>
+
+      <button pButton type="button" class="success-ok-button" (click)="closeDeleteSuccessDialog()">
+        <span pButtonLabel>OK</span>
+      </button>
+    </div>
   </p-dialog>
 </section>

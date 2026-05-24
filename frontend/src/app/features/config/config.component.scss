@@ -6,6 +6,21 @@
   display: grid;
   gap: 18px;
   color: #ffffff;
+  animation: screen-enter 260ms ease both;
+}
+
+@keyframes screen-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 .config-header,
@@ -43,6 +58,21 @@
   background: rgba(14, 165, 233, 0.22);
   color: #7dd3fc;
   font-size: 0.82rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 4px;
+}
+
+.emus-logo {
+  display: block;
+  width: auto;
+  height: 150px;
+  max-width: 286px;
+  object-fit: contain;
 }
 
 .config-grid {
