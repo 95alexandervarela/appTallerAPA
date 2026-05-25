@@ -13,10 +13,16 @@
   <section class="metrics-grid" aria-label="Metricas principales">
     @for (metric of metrics; track metric.title) {
       <app-dashboard-card
+        [class.metric-action]="isMetricNavigable(metric)"
+        [attr.role]="isMetricNavigable(metric) ? 'button' : null"
+        [attr.tabindex]="isMetricNavigable(metric) ? 0 : null"
         [title]="metric.title"
         [value]="metric.value"
         [detail]="metric.detail"
         [icon]="metric.icon"
+        (click)="navigateToTickets(metric)"
+        (keydown.enter)="navigateToTickets(metric)"
+        (keydown.space)="navigateToTickets(metric); $event.preventDefault()"
       />
     }
   </section>

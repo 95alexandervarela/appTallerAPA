@@ -1,15 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
 import { CardComponent } from '../../shared/components/card.component';
 import { TicketsService } from '../../core/services/tickets.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface DashboardMetric {
   title: string;
   value: string;
   detail: string;
   icon: string;
+  statusFilter?: 'pendiente' | 'diagnostico' | 'reparacion';
+  navigatesToTickets?: boolean;
 }
 
 interface QueueItem {
@@ -52,15 +56,58 @@ export class HomeComponent implements OnInit {
   protected avgResponseTime = '0 min';
   protected weeklyCompliance = '0%';
 
-  constructor(private ticketsService: TicketsService) {
+  constructor(
+    private ticketsService: TicketsService,
+    private authService: AuthService,
+    private router: Router,
+    private changeDetectorRef: ChangeDetectorRef,
+  ) {
     this.initializeEmptyMetrics();
   }
 
   ngOnInit(): void {
+    this.initializeEmptyMetrics();
     this.loadDashboardData();
   }
 
   private initializeEmptyMetrics(): void {
+    if (this.authService.isTecnico()) {
+      this.metrics = [
+        {
+          title: 'Mis tickets',
+          value: '0',
+          detail: 'Asignados a mi usuario',
+          icon: 'pi pi-inbox',
+          navigatesToTickets: true,
+        },
+        {
+          title: 'Pendientes',
+          value: '0',
+          detail: 'Por atender',
+          icon: 'pi pi-clock',
+          statusFilter: 'pendiente',
+          navigatesToTickets: true,
+        },
+        {
+          title: 'Diagnostico',
+          value: '0',
+          detail: 'En revision tecnica',
+          icon: 'pi pi-wrench',
+          statusFilter: 'diagnostico',
+          navigatesToTickets: true,
+        },
+        {
+          title: 'Reparacion',
+          value: '0',
+          detail: 'En proceso tecnico',
+          icon: 'pi pi-cog',
+          statusFilter: 'reparacion',
+          navigatesToTickets: true,
+        },
+      ];
+      return;
+    }
+
     this.metrics = [
       { title: 'Tickets abiertos', value: '0', detail: 'de alta prioridad', icon: 'pi pi-inbox' },
       {
@@ -80,42 +127,63 @@ export class HomeComponent implements OnInit {
   }
 
   private loadDashboardData(): void {
-    this.ticketsService.getTickets().subscribe({
+    this.ticketsService.getTicketsForCurrentUser().subscribe({
       next: (tickets: any[]) => {
         this.procesarTickets(tickets);
+        this.changeDetectorRef.detectChanges();
       },
       error: (err) => {
         console.error('Error cargando tickets:', err);
+        this.changeDetectorRef.detectChanges();
       },
     });
   }
 
   private procesarTickets(tickets: any[]): void {
-    if (!tickets || tickets.length === 0) {
-      return;
+    const safeTickets = tickets || [];
+
+    /**
+     * Para Tecnico los tickets ya vienen filtrados desde backend por usuario.
+     * Aqui solo se calculan metricas propias sin exponer estadistica global.
+     */
+    if (this.authService.isTecnico()) {
+      const pendientesTecnico = safeTickets.filter((t) =>
+        ['asignado', 'pendiente_aprobacion', 'pendiente_repuesto', 'espera_repuesto'].includes(
+          t.estadoTicket,
+        ),
+      ).length;
+      const diagnostico = safeTickets.filter((t) =>
+        ['en_diagnostico', 'diagnostico', 'diagnosticado'].includes(t.estadoTicket),
+      ).length;
+      const reparacion = safeTickets.filter((t) =>
+        ['listo_para_reparacion', 'en_reparacion', 'reparado_servicio_finalizado'].includes(
+          t.estadoTicket,
+        ),
+      ).length;
+
+      this.metrics[0].value = safeTickets.length.toString();
+      this.metrics[1].value = pendientesTecnico.toString();
+      this.metrics[2].value = diagnostico.toString();
+      this.metrics[3].value = reparacion.toString();
+    } else {
+      const abiertos = safeTickets.filter((t) => !['cerrado', 'cancelado', 'entregado'].includes(t.estadoTicket)).length;
+      const cerrados = safeTickets.filter((t) => ['cerrado', 'entregado'].includes(t.estadoTicket)).length;
+      const pendientes = safeTickets.filter((t) => t.estadoTicket?.startsWith('pendiente')).length;
+
+      const altaPrioridad = safeTickets.filter((t) => t.prioridad === 'alta' || t.prioridad === 'urgente').length;
+
+      this.metrics[0].value = abiertos.toString();
+      this.metrics[0].detail = `${altaPrioridad} de alta prioridad`;
+      this.metrics[1].value = cerrados.toString();
+      this.metrics[2].value = pendientes.toString();
+      this.metrics[3].value = '0'; // SLA en riesgo (requeriria fechas de vencimiento)
     }
 
-    // Contar tickets por estado
-    const abiertos = tickets.filter((t) => t.estadoTicket === 'Abierto').length;
-    const cerrados = tickets.filter((t) => t.estadoTicket === 'Cerrado').length;
-    const pendientes = tickets.filter((t) => t.estadoTicket === 'Pendiente').length;
-    const enProgreso = tickets.filter((t) => t.estadoTicket === 'En progreso').length;
-
-    // Tickets de alta prioridad
-    const altaPrioridad = tickets.filter((t) => t.prioridad === 'Alta').length;
-
-    // Actualizar métricas
-    this.metrics[0].value = abiertos.toString();
-    this.metrics[0].detail = `${altaPrioridad} de alta prioridad`;
-    this.metrics[1].value = cerrados.toString();
-    this.metrics[2].value = pendientes.toString();
-    this.metrics[3].value = '0'; // SLA en riesgo (requeriría fechas de vencimiento)
-
     // Calcular colas de trabajo (porcentaje por tipo)
-    this.calcularColas(tickets);
+    this.calcularColas(safeTickets);
 
     // Obtener últimos 3 tickets
-    this.recentTickets = tickets
+    this.recentTickets = safeTickets
       .slice(-3)
       .reverse()
       .map((t) => ({
@@ -126,12 +194,29 @@ export class HomeComponent implements OnInit {
       }));
 
     // Resumen operativo simulado
-    this.activeTechnicians = tickets.filter((t) => t.tecnicoAsignado).length;
+    this.activeTechnicians = safeTickets.filter((t) => t.tecnicoAsignado).length;
     this.avgResponseTime = '38 min';
     this.weeklyCompliance = '92%';
 
     // Generar datos para el gráfico
-    this.generarGrafico(tickets);
+    this.generarGrafico(safeTickets);
+  }
+
+  protected isMetricNavigable(metric: DashboardMetric): boolean {
+    return !!metric.navigatesToTickets;
+  }
+
+  /**
+   * Navega a Tickets reutilizando la misma pantalla con filtros por query param.
+   *
+   * @param metric Metrica clickeada desde Overview.
+   */
+  protected navigateToTickets(metric: DashboardMetric): void {
+    if (!this.isMetricNavigable(metric)) return;
+
+    this.router.navigate(['/tickets'], {
+      queryParams: metric.statusFilter ? { status: metric.statusFilter } : {},
+    });
   }
 
   private generarGrafico(tickets: any[]): void {
@@ -198,11 +283,14 @@ export class HomeComponent implements OnInit {
 
   private getSeverityFromStatus(status: string): 'success' | 'info' | 'warn' | 'danger' {
     switch (status) {
-      case 'Cerrado':
+      case 'cerrado':
+      case 'entregado':
         return 'success';
-      case 'En progreso':
+      case 'en_reparacion':
+      case 'en_diagnostico':
         return 'info';
-      case 'Pendiente':
+      case 'pendiente_aprobacion':
+      case 'pendiente_repuesto':
         return 'danger';
       default:
         return 'warn';

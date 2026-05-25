@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export interface CreateTicketPayload {
   numeroTicket: string;
@@ -22,6 +23,10 @@ export interface TechnicianOption {
 export interface AssignTechnicianPayload {
   tecnicoAsignado: string;
   observacionesAsignacion?: string;
+}
+
+export interface UpdateTicketStatusPayload {
+  estadoTicket: string;
 }
 
 export interface TicketResponse {
@@ -49,9 +54,12 @@ export interface TicketResponse {
   providedIn: 'root',
 })
 export class TicketsService {
-  private apiUrl = 'http://localhost:3080/api/tickets';
+  private apiUrl = '/api/tickets';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+  ) {}
 
   createTicket(payload: CreateTicketPayload): Observable<TicketResponse> {
     return this.http.post<TicketResponse>(this.apiUrl, payload);
@@ -61,11 +69,30 @@ export class TicketsService {
     return this.http.get<any[]>(this.apiUrl);
   }
 
+  /**
+   * Obtiene tickets respetando el rol autenticado.
+   *
+   * @remarks
+   * Tecnico consume `/my-tickets` para que el filtrado ocurra en backend.
+   * Administrador conserva la vista global mediante `/api/tickets`.
+   */
+  getTicketsForCurrentUser(): Observable<any[]> {
+    return this.authService.isTecnico() ? this.getMyTickets() : this.getTickets();
+  }
+
+  getMyTickets(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/my-tickets`);
+  }
+
   getTechnicians(): Observable<TechnicianOption[]> {
     return this.http.get<TechnicianOption[]>(`${this.apiUrl}/tecnicos-disponibles`);
   }
 
   assignTechnician(id: string, payload: AssignTechnicianPayload): Observable<TicketResponse> {
     return this.http.put<TicketResponse>(`${this.apiUrl}/${id}/asignar-tecnico`, payload);
+  }
+
+  updateTicketStatus(id: string, payload: UpdateTicketStatusPayload): Observable<TicketResponse> {
+    return this.http.patch<TicketResponse>(`${this.apiUrl}/${id}/status`, payload);
   }
 }

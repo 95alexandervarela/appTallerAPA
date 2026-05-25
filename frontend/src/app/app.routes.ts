@@ -5,6 +5,8 @@ import { RecepcionEquipoComponent } from './features/recepcion-equipo/recepcion-
 import { TicketsComponent } from './features/tickets/tickets.component';
 import { LayoutComponent } from './layout/layout.component';
 import { Login } from './login/login';
+import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 /**
  * Tabla inicial de rutas del frontend.
@@ -22,6 +24,7 @@ export const routes: Routes = [
   {
     path: 'home',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -32,6 +35,7 @@ export const routes: Routes = [
   {
     path: 'recepcion-equipo',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -42,6 +46,7 @@ export const routes: Routes = [
   {
     path: 'tickets',
     component: LayoutComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -59,6 +64,8 @@ export const routes: Routes = [
   {
     path: 'config',
     component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['administrador'] },
     children: [
       {
         path: '',

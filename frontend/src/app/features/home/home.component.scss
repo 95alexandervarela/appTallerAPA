@@ -70,6 +70,21 @@
   gap: 16px;
 }
 
+.metric-action {
+  cursor: pointer;
+  border-radius: 16px;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.metric-action:hover,
+.metric-action:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  outline: 0;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);

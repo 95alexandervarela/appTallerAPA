@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
+const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const roleRoutes = require("./routes/role.routes");
 const recepcionEquipoRoutes = require("./routes/recepcionEquipo.routes");
@@ -28,10 +29,37 @@ const app = express();
 // Conectar a la base de datos MongoDB
 connectDB();
 // Middlewares globales
+const allowedOrigins = new Set([
+  "http://localhost:4200",
+  "http://127.0.0.1:4200",
+  "http://[::1]:4200",
+  "http://localhost:3080",
+  "https://hvvph486-4200.use2.devtunnels.ms",
+]);
+
+const privateNetworkOriginPattern =
+  /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):4200$/;
+
+/**
+ * Valida origenes permitidos para desarrollo local del frontend Angular.
+ *
+ * @remarks
+ * Evita errores CORS tipo `Http failure response ... status 0` cuando el
+ * frontend se abre con `localhost`, `127.0.0.1`, IPv6 local o IP privada.
+ */
+const validateCorsOrigin = (origin, callback) => {
+  if (!origin || allowedOrigins.has(origin) || privateNetworkOriginPattern.test(origin)) {
+    callback(null, true);
+    return;
+  }
+
+  callback(new Error(`Origen CORS no permitido: ${origin}`));
+};
+
 app.use(
   cors({
-    origin: ["http://localhost:4200", "http://localhost:3080"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: validateCorsOrigin,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   }),
 );
@@ -45,6 +73,7 @@ app.get("/", (req, res) => {
 });
 
 // Registrar rutas modulares
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/recepciones-equipo", recepcionEquipoRoutes);

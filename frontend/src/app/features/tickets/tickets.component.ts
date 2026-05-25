@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { finalize, switchMap, tap, timeout } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -7,8 +8,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
-import { UsersService } from '../../core/services/users.service';
 import { DiagnosticoTecnicoComponent } from './diagnostico/diagnostico-tecnico.component';
 import { GarantiaTicketComponent } from './garantia/garantia-ticket.component';
 import { RepuestosTicketComponent } from './repuestos/repuestos-ticket.component';
@@ -61,6 +62,8 @@ interface TicketForm {
   estadoRecepcion: string;
 }
 
+type TicketStatusFilter = 'pendiente' | 'diagnostico' | 'reparacion' | '';
+
 /**
  * Se implementó generación temporal del número de caso.
  * Se añadió dashboard de tickets.
@@ -96,8 +99,13 @@ export class TicketsComponent implements OnInit {
   protected ticketErrorMessage = '';
   protected ticketSuccessMessage = '';
   protected assignTicketErrorMessage = '';
+  protected statusUpdateMessage = '';
+  protected statusUpdateErrorMessage = '';
   protected selectedTechnicianId = '';
+  protected selectedStatusCode = '';
+  protected filterStatus: TicketStatusFilter = '';
   protected isAssigningTicket = false;
+  protected isUpdatingStatus = false;
   protected selectedTicket: TicketResumen | null = null;
   protected usuarioTemporalId = '';
 
@@ -117,19 +125,30 @@ export class TicketsComponent implements OnInit {
     { label: 'Equipo no ingresado', value: 'equipo_no_ingresado' },
   ];
 
+  protected readonly technicianStatusOptions: SelectOption[] = [
+    { label: 'En diagnostico', value: 'en_diagnostico' },
+    { label: 'Diagnostico registrado', value: 'diagnosticado' },
+    { label: 'Espera repuesto', value: 'espera_repuesto' },
+    { label: 'Listo para reparacion', value: 'listo_para_reparacion' },
+    { label: 'En reparacion', value: 'en_reparacion' },
+    { label: 'Reparado', value: 'reparado_servicio_finalizado' },
+  ];
+
   protected tickets: TicketResumen[] = [];
   protected technicianOptions: SelectOption[] = [];
 
   protected ticketForm: TicketForm = this.createEmptyTicketForm();
 
   constructor(
+    private route: ActivatedRoute,
     private recepcionEquipoService: RecepcionEquipoService,
     private ticketsService: TicketsService,
-    private usersService: UsersService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.watchStatusFilter();
     this.loadUsuarioTemporal();
     this.loadTechnicians();
     this.loadTickets();
@@ -137,10 +156,11 @@ export class TicketsComponent implements OnInit {
 
   protected get ticketsFiltrados(): TicketResumen[] {
     const value = this.busquedaTicket.trim().toLowerCase();
+    let filteredTickets = this.filterTicketsByStatus(this.filterTicketsForCurrentUser(this.tickets));
 
-    if (!value) return this.tickets.slice(-5).reverse();
+    if (!value) return filteredTickets;
 
-    return this.tickets.filter((ticket) =>
+    return filteredTickets.filter((ticket) =>
       [ticket.numeroCaso, ticket.cliente, ticket.equipo, ticket.estado]
         .join(' ')
         .toLowerCase()
@@ -148,7 +168,69 @@ export class TicketsComponent implements OnInit {
     );
   }
 
+  /**
+   * Lee `status` desde query params para reutilizar esta misma pantalla.
+   *
+   * @remarks
+   * Permite navegar desde Overview hacia `/tickets`, `/tickets?status=pendiente`,
+   * `/tickets?status=diagnostico` o `/tickets?status=reparacion` sin crear vistas duplicadas.
+   */
+  private watchStatusFilter(): void {
+    this.route.queryParams.subscribe((params) => {
+      this.filterStatus = this.normalizeStatusFilter(params['status']);
+      this.cdr.detectChanges();
+    });
+  }
+
+  private normalizeStatusFilter(value: unknown): TicketStatusFilter {
+    if (value === 'pendiente' || value === 'pendientes') return 'pendiente';
+    if (value === 'diagnostico') return 'diagnostico';
+    if (value === 'reparacion') return 'reparacion';
+    return '';
+  }
+
+  private filterTicketsByStatus(tickets: TicketResumen[]): TicketResumen[] {
+    if (!this.filterStatus) return tickets;
+
+    return tickets.filter((ticket) => this.matchesStatusFilter(ticket.estadoCodigo));
+  }
+
+  private filterTicketsForCurrentUser(tickets: TicketResumen[]): TicketResumen[] {
+    if (!this.authService.isTecnico()) return tickets;
+
+    const currentUserId = this.authService.getCurrentUserId();
+    return tickets.filter((ticket) => ticket.tecnicoAsignadoId === currentUserId);
+  }
+
+  private matchesStatusFilter(estadoCodigo: string): boolean {
+    if (this.filterStatus === 'pendiente') {
+      return (
+        estadoCodigo === 'asignado' ||
+        estadoCodigo === 'espera_repuesto' ||
+        estadoCodigo.startsWith('pendiente')
+      );
+    }
+
+    if (this.filterStatus === 'diagnostico') {
+      return ['en_diagnostico', 'diagnostico', 'diagnosticado'].includes(estadoCodigo);
+    }
+
+    if (this.filterStatus === 'reparacion') {
+      return [
+        'reparacion_autorizada',
+        'listo_reparacion',
+        'listo_para_reparacion',
+        'en_reparacion',
+        'reparado_servicio_finalizado',
+      ].includes(estadoCodigo);
+    }
+
+    return true;
+  }
+
   protected abrirFormulario(): void {
+    if (!this.canCreateTicket()) return;
+
     this.ticketErrorMessage = '';
     this.ticketSubmitted = false;
     this.ticketForm = {
@@ -175,6 +257,11 @@ export class TicketsComponent implements OnInit {
     this.ticketSubmitted = true;
     this.ticketErrorMessage = '';
     this.ticketSuccessMessage = '';
+
+    if (!this.canCreateTicket()) {
+      this.ticketErrorMessage = 'Tu perfil no permite crear tickets.';
+      return;
+    }
 
     if (!this.isTicketFormValid()) {
       this.ticketErrorMessage = 'Completa los datos requeridos antes de guardar.';
@@ -289,15 +376,21 @@ export class TicketsComponent implements OnInit {
 
   protected openTicketDetail(ticket: TicketResumen): void {
     this.selectedTicket = ticket;
+    this.selectedStatusCode = ticket.estadoCodigo;
+    this.statusUpdateMessage = '';
+    this.statusUpdateErrorMessage = '';
     this.isTicketDetailDialogOpen = true;
   }
 
   protected closeTicketDetail(): void {
     this.isTicketDetailDialogOpen = false;
+    this.selectedStatusCode = '';
+    this.statusUpdateMessage = '';
+    this.statusUpdateErrorMessage = '';
   }
 
   protected openAssignTechnicianDialog(): void {
-    if (!this.selectedTicket) return;
+    if (!this.selectedTicket || !this.canAssignTechnician()) return;
 
     this.assignTicketErrorMessage = '';
     this.selectedTechnicianId = this.selectedTicket.tecnicoAsignadoId;
@@ -311,7 +404,7 @@ export class TicketsComponent implements OnInit {
   }
 
   protected openDiagnosticoDialog(): void {
-    if (!this.selectedTicket) return;
+    if (!this.selectedTicket || !this.canRegisterDiagnostico()) return;
 
     this.isDiagnosticoDialogOpen = true;
   }
@@ -326,7 +419,7 @@ export class TicketsComponent implements OnInit {
   }
 
   protected openGarantiaDialog(): void {
-    if (!this.selectedTicket) return;
+    if (!this.selectedTicket || !this.canValidateGarantia()) return;
 
     this.isGarantiaDialogOpen = true;
   }
@@ -357,11 +450,12 @@ export class TicketsComponent implements OnInit {
 
   protected canManageRepuestos(): boolean {
     if (!this.selectedTicket) return false;
+    if (this.authService.isTecnico() && !this.isSelectedTicketOwnedByCurrentUser()) return false;
     return this.selectedTicket.estadoCodigo !== 'pendiente_aprobacion';
   }
 
   protected assignTechnician(): void {
-    if (!this.selectedTicket) return;
+    if (!this.selectedTicket || !this.canAssignTechnician()) return;
 
     if (!this.selectedTechnicianId) {
       this.assignTicketErrorMessage = 'Selecciona un tecnico para asignar el ticket.';
@@ -394,6 +488,64 @@ export class TicketsComponent implements OnInit {
       });
   }
 
+  protected canCreateTicket(): boolean {
+    return !this.authService.isTecnico();
+  }
+
+  protected canAssignTechnician(): boolean {
+    return this.authService.isAdministrador();
+  }
+
+  protected canRegisterDiagnostico(): boolean {
+    return this.authService.isAdministrador() || this.isSelectedTicketOwnedByCurrentUser();
+  }
+
+  protected canValidateGarantia(): boolean {
+    return this.authService.isAdministrador();
+  }
+
+  protected canUpdateTicketStatus(): boolean {
+    return this.authService.isTecnico() && this.isSelectedTicketOwnedByCurrentUser();
+  }
+
+  /**
+   * Actualiza estado de tickets propios para el flujo Tecnico.
+   *
+   * @remarks
+   * El backend vuelve a validar propiedad del ticket y estados permitidos; el
+   * frontend solo muestra la accion cuando corresponde al usuario autenticado.
+   */
+  protected updateSelectedTicketStatus(): void {
+    if (!this.selectedTicket || !this.canUpdateTicketStatus() || !this.selectedStatusCode) return;
+
+    this.isUpdatingStatus = true;
+    this.statusUpdateMessage = '';
+    this.statusUpdateErrorMessage = '';
+
+    this.ticketsService
+      .updateTicketStatus(this.selectedTicket.id, { estadoTicket: this.selectedStatusCode })
+      .pipe(
+        finalize(() => {
+          this.isUpdatingStatus = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          const updatedTicket = this.mapTicketResponse(response.ticket);
+          this.tickets = this.tickets.map((ticket) =>
+            ticket.id === updatedTicket.id ? updatedTicket : ticket,
+          );
+          this.selectedTicket = updatedTicket;
+          this.selectedStatusCode = updatedTicket.estadoCodigo;
+          this.statusUpdateMessage = 'Estado actualizado.';
+        },
+        error: (error) => {
+          this.statusUpdateErrorMessage =
+            error.error?.error || error.message || 'No se pudo actualizar el estado.';
+        },
+      });
+  }
+
   protected isFieldInvalid(field: keyof TicketForm): boolean {
     return this.ticketSubmitted && !String(this.ticketForm[field]).trim();
   }
@@ -408,18 +560,11 @@ export class TicketsComponent implements OnInit {
   }
 
   private loadUsuarioTemporal(): void {
-    this.usersService.getUsers().subscribe({
-      next: (users) => {
-        this.usuarioTemporalId = users[0]?._id || '';
-      },
-      error: () => {
-        this.usuarioTemporalId = '';
-      },
-    });
+    this.usuarioTemporalId = this.authService.getCurrentUserId();
   }
 
   private loadTickets(): void {
-    this.ticketsService.getTickets().subscribe({
+    this.ticketsService.getTicketsForCurrentUser().subscribe({
       next: (tickets) => {
         // Se corrigió carga de actividad reciente forzando change detection y asegurando render inmediato de datos.
         this.tickets = tickets.map((ticket) => this.mapTicketResponse(ticket));
@@ -433,6 +578,11 @@ export class TicketsComponent implements OnInit {
   }
 
   private loadTechnicians(): void {
+    if (this.authService.isTecnico()) {
+      this.technicianOptions = [];
+      return;
+    }
+
     this.ticketsService.getTechnicians().subscribe({
       next: (technicians) => {
         this.technicianOptions = technicians.map((technician) => ({
@@ -476,6 +626,14 @@ export class TicketsComponent implements OnInit {
   private getTechnicianName(value: TechnicianOption | string | null | undefined): string {
     if (!value || typeof value === 'string') return '';
     return value.nombre_completo || value.username;
+  }
+
+  private isSelectedTicketOwnedByCurrentUser(): boolean {
+    return (
+      !!this.selectedTicket &&
+      !!this.selectedTicket.tecnicoAsignadoId &&
+      this.selectedTicket.tecnicoAsignadoId === this.authService.getCurrentUserId()
+    );
   }
 
   private parseAccesorios(value: string): string[] {

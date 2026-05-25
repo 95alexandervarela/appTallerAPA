@@ -38,7 +38,7 @@ export interface RecepcionEquipoResponse {
   providedIn: 'root',
 })
 export class RecepcionEquipoService {
-  private apiUrl = 'http://localhost:3080/api/recepciones-equipo';
+  private apiUrl = '/api/recepciones-equipo';
 
   constructor(private http: HttpClient) {}
 

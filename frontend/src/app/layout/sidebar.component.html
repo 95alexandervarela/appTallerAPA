@@ -12,9 +12,29 @@
   <p-menu [model]="menuItems" styleClass="sidebar-menu" />
 
   <div class="sidebar-footer">
-    <div class="user-bubble">
+    @if (isUserPopoverOpen) {
+      <div class="user-popover" role="dialog" aria-label="Sesion de usuario" (click)="stopUserPopoverClick($event)">
+        <div class="user-popover-copy">
+          <strong>{{ currentUser?.name || 'Usuario' }}</strong>
+          <span>{{ currentUser?.role || 'Rol no disponible' }}</span>
+        </div>
+
+        <button type="button" class="logout-button" (click)="logout()">
+          <i class="pi pi-sign-out" aria-hidden="true"></i>
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="user-bubble"
+      aria-label="Abrir menu de usuario"
+      [attr.aria-expanded]="isUserPopoverOpen"
+      (click)="toggleUserPopover($event)"
+    >
       <i class="pi pi-user"></i>
-    </div>
+    </button>
 
     <small class="sidebar-copyright">
       © Almacen Pajaro Azul 2026

@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <form class="login-form">
+    <form class="login-form" (ngSubmit)="submitLogin()" novalidate>
       <div class="field-group">
         <label for="username">Usuario</label>
         <p-iconfield iconPosition="left">
@@ -48,7 +48,11 @@
         Recordar usuario
       </label>
 
-      <button pButton type="button" class="login-button" routerLink="/home">
+      @if (loginErrorMessage) {
+        <p class="login-error">{{ loginErrorMessage }}</p>
+      }
+
+      <button pButton type="submit" class="login-button" [loading]="isLoggingIn" [disabled]="isLoggingIn">
         <span pButtonLabel>Iniciar sesion</span>
       </button>
     </form>

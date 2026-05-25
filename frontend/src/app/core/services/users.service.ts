@@ -36,7 +36,7 @@ export interface UserResponse {
   providedIn: 'root',
 })
 export class UsersService {
-  private apiUrl = 'http://localhost:3080/api/users';
+  private apiUrl = '/api/users';
 
   constructor(private http: HttpClient) {}
 

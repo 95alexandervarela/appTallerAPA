@@ -203,6 +203,163 @@ Validaciones actuales de frontend:
 
 ## Backend API (Help Desk Taller APA)
 
+## Autenticacion y Roles
+
+Se implemento una primera base de autenticacion real para separar la experiencia de `Administrador` y `Tecnico`.
+
+### Login real
+
+El login del frontend llama a:
+
+```text
+POST /api/auth/login
+```
+
+Payload:
+
+```json
+{
+  "username": "jzuniga",
+  "password": "contrasena"
+}
+```
+
+El backend valida el usuario en MongoDB con `Usuario.comparePassword()`, que compara la contrasena contra el hash PBKDF2 almacenado. La respuesta nunca incluye `passwordHash`.
+
+Respuesta esperada:
+
+```json
+{
+  "message": "Inicio de sesion exitoso",
+  "user": {
+    "id": "id-del-usuario",
+    "username": "jzuniga",
+    "name": "Jose Antonio Zuniga",
+    "email": "sistemas2@almacenpajaroazul.com",
+    "role": "Tecnico",
+    "roleCode": "tecnico",
+    "roleId": "id-del-rol"
+  },
+  "token": null,
+  "sessionMode": "temporary-session-storage"
+}
+```
+
+### Sesion temporal en frontend
+
+`AuthService` vive en:
+
+```text
+frontend/src/app/core/services/auth.service.ts
+```
+
+Responsabilidades:
+
+- `login(username, password)`
+- `logout()`
+- obtener usuario actual
+- obtener rol actual
+- verificar `isTecnico()`
+- verificar `isAdministrador()`
+- exponer estado autenticado
+
+La sesion se guarda temporalmente en `sessionStorage` con datos minimos del usuario. No se guarda la contrasena.
+
+> Pendiente tecnico: migrar esta sesion a JWT real con expiracion, firma, refresh token y validacion completa en middleware.
+
+### Interceptor temporal
+
+Mientras no exista JWT, el frontend adjunta:
+
+```text
+x-user-id
+x-user-role
+```
+
+Archivo:
+
+```text
+frontend/src/app/core/interceptors/auth-session.interceptor.ts
+```
+
+El backend valida el usuario recibido y resuelve su rol antes de permitir recursos protegidos. Este mecanismo es temporal y no reemplaza JWT.
+
+### Control de acceso
+
+Guards creados:
+
+```text
+frontend/src/app/core/guards/auth.guard.ts
+frontend/src/app/core/guards/role.guard.ts
+```
+
+Reglas actuales:
+
+- `/home`, `/tickets`, `/recepcion-equipo`: requieren sesion.
+- `/config`: requiere sesion y rol `administrador`.
+- Si un Tecnico intenta entrar manualmente a `/config`, se redirige a `/home`.
+
+### Permisos por rol
+
+Administrador:
+
+- ve todos los tickets
+- ve estadisticas globales
+- puede gestionar usuarios
+- puede asignar tecnicos
+- conserva acceso a configuracion
+
+Tecnico:
+
+- ve solo tickets donde `tecnicoAsignado` coincide con su usuario autenticado
+- ve metricas propias en Overview
+- no ve Configuracion en el sidebar
+- no accede a Gestion de usuarios
+- puede actualizar estados tecnicos permitidos de sus propios tickets
+
+Estados tecnicos permitidos:
+
+```text
+en_diagnostico
+diagnosticado
+espera_repuesto
+listo_para_reparacion
+en_reparacion
+reparado_servicio_finalizado
+```
+
+### Endpoints protegidos
+
+```text
+GET /api/tickets
+GET /api/tickets/my-tickets
+PATCH /api/tickets/:id/status
+GET /api/users
+POST /api/users
+PUT /api/users/:id
+DELETE /api/users/:id
+```
+
+Para `Tecnico`, `GET /api/tickets` y `GET /api/tickets/my-tickets` filtran en backend por `tecnicoAsignado`.
+
+`PATCH /api/tickets/:id/status` valida:
+
+- sesion requerida
+- ticket existente
+- si el rol es `Tecnico`, el ticket debe estar asignado a ese usuario
+- el estado solicitado debe estar dentro de la lista tecnica permitida
+
+### Roles historicos
+
+La base actual puede tener usuarios con `rol_id` historico aunque la coleccion `roles` este vacia. Por eso el backend incluye un fallback temporal:
+
+```text
+6a126c9296a6e0cb6e9df8a3 -> administrador
+6a126c9296a6e0cb6e9df8a4 -> tecnico
+```
+
+Pendiente recomendado: ejecutar o corregir el seed de roles para que todos los usuarios apunten a documentos reales en la coleccion `roles`.
+
 El backend esta construido con **Node.js + Express** y se conecta a una base de datos **MongoDB** mediante **Mongoose**. Se ejecuta con **nodemon** en desarrollo para recarga automatica.
 
 ### Estructura de carpetas

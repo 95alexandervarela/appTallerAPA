@@ -31,10 +31,12 @@
             />
           </label>
 
-          <button pButton type="button" class="quick-action-button" (click)="abrirFormulario()">
-            <i class="pi pi-plus-circle" aria-hidden="true"></i>
-            <span pButtonLabel>Crear ticket</span>
-          </button>
+          @if (canCreateTicket()) {
+            <button pButton type="button" class="quick-action-button" (click)="abrirFormulario()">
+              <i class="pi pi-plus-circle" aria-hidden="true"></i>
+              <span pButtonLabel>Crear ticket</span>
+            </button>
+          }
         </div>
       </article>
 
@@ -390,30 +392,73 @@
           <span>Prioridad</span>
           <strong>{{ selectedTicket.prioridad }}</strong>
         </div>
-        <div>
+        <div style="margin-top: 12px">
           <span>Tecnico asignado</span>
           <strong>{{ selectedTicket.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
         </div>
       </div>
 
+      @if (canUpdateTicketStatus()) {
+        <section class="technician-status-panel assign-technician-content">
+          <div class="form-field">
+            <span>Estado tecnico</span>
+            <p-select
+              name="selectedStatusCode"
+              [options]="technicianStatusOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="selectedStatusCode"
+              placeholder="Seleccionar estado"
+              appendTo="body"
+            />
+          </div>
+
+          @if (statusUpdateMessage) {
+            <p class="empty-row">{{ statusUpdateMessage }}</p>
+          }
+
+          @if (statusUpdateErrorMessage) {
+            <p class="form-error">{{ statusUpdateErrorMessage }}</p>
+          }
+
+          <button
+            pButton
+            type="button"
+            class="quick-action-button"
+            [loading]="isUpdatingStatus"
+            [disabled]="isUpdatingStatus"
+            (click)="updateSelectedTicketStatus()"
+          >
+            <i class="pi pi-refresh" aria-hidden="true"></i>
+            <span pButtonLabel>Actualizar estado</span>
+          </button>
+        </section>
+      }
+
       <footer class="ticket-detail-actions">
-        <button
-          pButton
-          type="button"
-          class="quick-action-button"
-          (click)="openAssignTechnicianDialog()"
-        >
-          <i class="pi pi-user-plus" aria-hidden="true"></i>
-          <span pButtonLabel>Asignar tecnico</span>
-        </button>
-        <button pButton type="button" class="quick-action-button" (click)="openDiagnosticoDialog()">
-          <i class="pi pi-wrench" aria-hidden="true"></i>
-          <span pButtonLabel>Registrar diagnostico</span>
-        </button>
-        <button pButton type="button" class="quick-action-button" (click)="openGarantiaDialog()">
-          <i class="pi pi-shield" aria-hidden="true"></i>
-          <span pButtonLabel>Validar garantia</span>
-        </button>
+        @if (canAssignTechnician()) {
+          <button
+            pButton
+            type="button"
+            class="quick-action-button"
+            (click)="openAssignTechnicianDialog()"
+          >
+            <i class="pi pi-user-plus" aria-hidden="true"></i>
+            <span pButtonLabel>Asignar tecnico</span>
+          </button>
+        }
+        @if (canRegisterDiagnostico()) {
+          <button pButton type="button" class="quick-action-button" (click)="openDiagnosticoDialog()">
+            <i class="pi pi-wrench" aria-hidden="true"></i>
+            <span pButtonLabel>Registrar diagnostico</span>
+          </button>
+        }
+        @if (canValidateGarantia()) {
+          <button pButton type="button" class="quick-action-button" (click)="openGarantiaDialog()">
+            <i class="pi pi-shield" aria-hidden="true"></i>
+            <span pButtonLabel>Validar garantia</span>
+          </button>
+        }
         <button
           pButton
           type="button"

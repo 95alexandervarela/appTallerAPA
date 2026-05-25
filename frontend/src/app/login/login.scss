@@ -128,6 +128,23 @@
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
 }
 
+/**
+ * Mensaje discreto para errores reales de autenticacion.
+ *
+ * @remarks
+ * Se agrega localmente al login para no modificar estilos globales ni alterar
+ * el aspecto visual cuando no existe error.
+ */
+.login-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  border-radius: 12px;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  font-size: 0.82rem;
+}
+
 :host ::ng-deep .login-button {
   width: 100%;
   justify-content: center;
