@@ -1,0 +1,160 @@
+:host {
+  display: block;
+}
+
+.repuestos-form {
+  display: grid;
+  gap: 16px;
+}
+
+.repuestos-summary,
+.repuestos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.repuestos-summary div {
+  display: grid;
+  gap: 6px;
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.repuestos-summary span,
+.repuestos-grid label > span,
+.repuestos-grid .form-field > span {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.repuestos-summary strong {
+  color: #ffffff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.event-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.event-flow button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.event-flow button:hover,
+.event-flow button.active {
+  background: rgba(14, 165, 233, 0.28);
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.14);
+  transform: translateY(-1px);
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.repuestos-grid label,
+.repuestos-grid .form-field {
+  display: grid;
+  gap: 8px;
+}
+
+.repuestos-grid small {
+  color: #fecaca;
+  font-size: 0.76rem;
+}
+
+input[pInputText],
+:host ::ng-deep .p-select,
+textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+input[pInputText],
+:host ::ng-deep .p-select {
+  min-height: 42px;
+}
+
+:host ::ng-deep .p-select-label {
+  color: #ffffff;
+}
+
+textarea {
+  min-height: 92px;
+  padding: 12px;
+  font: inherit;
+  resize: vertical;
+}
+
+.repuestos-error,
+.repuestos-success {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.repuestos-error {
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+
+.repuestos-success {
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  background: rgba(52, 211, 153, 0.12);
+  color: #bbf7d0;
+}
+
+.repuestos-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.repuestos-cancel,
+.repuestos-save {
+  border-radius: 999px !important;
+}
+
+.repuestos-cancel {
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.repuestos-save {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(14, 165, 233, 0.34) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
+}
+
+@media (max-width: 720px) {
+  .repuestos-summary,
+  .repuestos-grid,
+  .event-flow {
+    grid-template-columns: 1fr;
+  }
+}

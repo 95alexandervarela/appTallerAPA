@@ -1,0 +1,147 @@
+<form class="repuestos-form" (ngSubmit)="saveRepuesto()" novalidate>
+  <div class="repuestos-summary">
+    <div>
+      <span>Numero de caso</span>
+      <strong>{{ ticket?.numeroCaso || 'Sin ticket' }}</strong>
+    </div>
+    <div>
+      <span>Tecnico asignado</span>
+      <strong>{{ ticket?.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
+    </div>
+    <div>
+      <span>Estado actual</span>
+      <strong>{{ ticket?.estado || 'Sin estado' }}</strong>
+    </div>
+    <div>
+      <span>Equipo</span>
+      <strong>{{ ticket?.equipo || 'Sin equipo' }}</strong>
+    </div>
+  </div>
+
+  <div class="event-flow">
+    <button type="button" [class.active]="form.evento === 'solicitar'" (click)="form.evento = 'solicitar'">
+      <i class="pi pi-send" aria-hidden="true"></i>
+      <span>Solicitar</span>
+    </button>
+    <button type="button" [class.active]="form.evento === 'recibir'" (click)="form.evento = 'recibir'">
+      <i class="pi pi-inbox" aria-hidden="true"></i>
+      <span>Llegada</span>
+    </button>
+    <button type="button" [class.active]="form.evento === 'entregar'" (click)="form.evento = 'entregar'">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <span>Entregar</span>
+    </button>
+  </div>
+
+  <div class="repuestos-grid">
+    <div class="form-field">
+      <span>Evento</span>
+      <p-select
+        name="evento"
+        [options]="eventoOptions"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="form.evento"
+        appendTo="body"
+      />
+    </div>
+
+    <label>
+      <span>Tipo de repuesto</span>
+      <input pInputText type="text" name="tipoRepuesto" [(ngModel)]="form.tipoRepuesto" />
+      @if (isFieldInvalid('tipoRepuesto')) {
+        <small>Tipo de repuesto es requerido.</small>
+      }
+    </label>
+
+    <div class="form-field">
+      <span>Origen</span>
+      <p-select
+        name="origenRepuesto"
+        [options]="origenOptions"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="form.origenRepuesto"
+        appendTo="body"
+      />
+    </div>
+
+    <label>
+      <span>Cantidad</span>
+      <input pInputText type="number" min="1" name="cantidad" [(ngModel)]="form.cantidad" />
+      @if (isFieldInvalid('cantidad')) {
+        <small>Cantidad es requerida.</small>
+      }
+    </label>
+
+    <label>
+      <span>Proveedor</span>
+      <input pInputText type="text" name="proveedor" [(ngModel)]="form.proveedor" />
+      @if (isFieldInvalid('proveedor')) {
+        <small>Proveedor es requerido.</small>
+      }
+    </label>
+
+    <label>
+      <span>Cantidad recibida</span>
+      <input
+        pInputText
+        type="number"
+        min="0"
+        name="cantidadRecibida"
+        [(ngModel)]="form.cantidadRecibida"
+      />
+    </label>
+
+    <label class="field-wide">
+      <span>Descripcion del repuesto</span>
+      <textarea name="descripcionRepuesto" [(ngModel)]="form.descripcionRepuesto"></textarea>
+      @if (isFieldInvalid('descripcionRepuesto')) {
+        <small>Descripcion del repuesto es requerida.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Motivo de solicitud</span>
+      <textarea name="motivoSolicitud" [(ngModel)]="form.motivoSolicitud"></textarea>
+      @if (isFieldInvalid('motivoSolicitud')) {
+        <small>Motivo de solicitud es requerido.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Diferencias u observaciones</span>
+      <textarea name="diferencias" [(ngModel)]="form.diferencias"></textarea>
+    </label>
+  </div>
+
+  @if (errorMessage) {
+    <p class="repuestos-error">{{ errorMessage }}</p>
+  }
+
+  @if (successMessage) {
+    <p class="repuestos-success">{{ successMessage }}</p>
+  }
+
+  <footer class="repuestos-actions">
+    <button
+      pButton
+      type="button"
+      class="repuestos-cancel"
+      [disabled]="isSaving"
+      (click)="cancelRepuesto()"
+    >
+      <span pButtonLabel>Cancelar</span>
+    </button>
+    <button
+      pButton
+      type="submit"
+      class="repuestos-save"
+      [loading]="isSaving"
+      [disabled]="isSaving"
+    >
+      <i class="pi pi-box" aria-hidden="true"></i>
+      <span pButtonLabel>Guardar repuesto</span>
+    </button>
+  </footer>
+</form>

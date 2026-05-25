@@ -1,0 +1,164 @@
+:host {
+  display: block;
+}
+
+.garantia-form {
+  display: grid;
+  gap: 16px;
+}
+
+.garantia-summary,
+.garantia-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.garantia-summary div {
+  display: grid;
+  gap: 6px;
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.garantia-summary span,
+.garantia-grid label > span,
+.garantia-check span {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.garantia-summary strong {
+  color: #ffffff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.summary-wide,
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.decision-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.decision-button,
+.garantia-cancel,
+.garantia-save {
+  border-radius: 999px !important;
+}
+
+.decision-button {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(14, 165, 233, 0.26) !important;
+  color: #ffffff !important;
+}
+
+.decision-button.danger {
+  background: rgba(248, 113, 113, 0.18) !important;
+}
+
+.garantia-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.garantia-grid small {
+  color: #fecaca;
+  font-size: 0.76rem;
+}
+
+input[pInputText],
+textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+input[pInputText] {
+  min-height: 42px;
+}
+
+input[pInputText][readonly] {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+textarea {
+  min-height: 92px;
+  padding: 12px;
+  font: inherit;
+  resize: vertical;
+}
+
+.garantia-check {
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.garantia-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0ea5e9;
+}
+
+.garantia-error,
+.garantia-success {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.garantia-error {
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+
+.garantia-success {
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  background: rgba(52, 211, 153, 0.12);
+  color: #bbf7d0;
+}
+
+.garantia-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.garantia-cancel {
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.garantia-save {
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(14, 165, 233, 0.34) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
+}
+
+@media (max-width: 720px) {
+  .garantia-summary,
+  .garantia-grid,
+  .decision-actions {
+    grid-template-columns: 1fr;
+  }
+}

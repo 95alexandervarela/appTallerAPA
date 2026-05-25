@@ -6,10 +6,12 @@ const express = require('express');
  * @param {import('mongoose').Model} Model Modelo de Mongoose.
  * @param {object} options Opciones de configuracion.
  * @param {string} options.resourceName Nombre legible del recurso.
- * @param {string[]} [options.populate] Campos a poblar en las consultas.
+ * @param {Array<string|object>} [options.populate] Campos a poblar en las consultas.
+ * @param {Function} [options.afterCreate] Callback despues de crear el documento.
+ * @param {Function} [options.afterUpdate] Callback despues de actualizar el documento.
  * @returns {import('express').Router}
  */
-function createCrudRouter(Model, { resourceName, populate = [] }) {
+function createCrudRouter(Model, { resourceName, populate = [], afterCreate, afterUpdate }) {
   const router = express.Router();
 
   const applyPopulate = (query) =>
@@ -19,6 +21,10 @@ function createCrudRouter(Model, { resourceName, populate = [] }) {
     try {
       const document = new Model(req.body);
       await document.save();
+
+      if (afterCreate) {
+        await afterCreate(document, req);
+      }
 
       res.status(201).json({
         message: `${resourceName} registrado exitosamente`,
@@ -76,6 +82,10 @@ function createCrudRouter(Model, { resourceName, populate = [] }) {
       });
 
       await document.save();
+
+      if (afterUpdate) {
+        await afterUpdate(document, req);
+      }
 
       res.status(200).json({
         message: `${resourceName} actualizado exitosamente`,

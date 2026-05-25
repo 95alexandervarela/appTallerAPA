@@ -1,0 +1,110 @@
+<form class="garantia-form" (ngSubmit)="saveGarantia()" novalidate>
+  <div class="garantia-summary">
+    <div>
+      <span>Numero de caso</span>
+      <strong>{{ ticket?.numeroCaso || 'Sin ticket' }}</strong>
+    </div>
+    <div>
+      <span>Cliente</span>
+      <strong>{{ ticket?.cliente || 'Sin cliente' }}</strong>
+    </div>
+    <div class="summary-wide">
+      <span>Equipo</span>
+      <strong>{{ ticket?.equipo || 'Sin equipo' }}</strong>
+    </div>
+  </div>
+
+  <div class="decision-actions">
+    <button pButton type="button" class="decision-button" (click)="aprobarGarantia()">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <span pButtonLabel>Aprobar garantia</span>
+    </button>
+    <button pButton type="button" class="decision-button danger" (click)="rechazarGarantia()">
+      <i class="pi pi-times-circle" aria-hidden="true"></i>
+      <span pButtonLabel>Rechazar garantia</span>
+    </button>
+    <button pButton type="button" class="decision-button" (click)="autorizarCliente()">
+      <i class="pi pi-user-edit" aria-hidden="true"></i>
+      <span pButtonLabel>Autoriza cliente</span>
+    </button>
+  </div>
+
+  <div class="garantia-grid">
+    <label>
+      <span>Decision garantia</span>
+      <input pInputText type="text" name="decisionGarantia" [(ngModel)]="form.decisionGarantia" readonly />
+    </label>
+
+    <label>
+      <span>Decision cliente</span>
+      <input pInputText type="text" name="decisionCliente" [(ngModel)]="form.decisionCliente" readonly />
+    </label>
+
+    <label>
+      <span>Costo estimado</span>
+      <input
+        pInputText
+        type="number"
+        min="0"
+        name="costoEstimado"
+        [(ngModel)]="form.costoEstimado"
+      />
+    </label>
+
+    <label class="garantia-check">
+      <input type="checkbox" name="requiereRepuesto" [(ngModel)]="form.requiereRepuesto" />
+      <span>Requiere repuesto</span>
+    </label>
+
+    <label class="field-wide">
+      <span>Repuesto requerido</span>
+      <textarea name="repuestoRequerido" [(ngModel)]="form.repuestoRequerido"></textarea>
+    </label>
+
+    <label class="field-wide">
+      <span>Motivo de decision</span>
+      <textarea name="motivoDecision" [(ngModel)]="form.motivoDecision"></textarea>
+      @if (isTextInvalid('motivoDecision')) {
+        <small>Motivo de decision es requerido.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Evidencia / autorizacion</span>
+      <textarea name="evidenciaAutorizacion" [(ngModel)]="form.evidenciaAutorizacion"></textarea>
+      @if (isTextInvalid('evidenciaAutorizacion')) {
+        <small>Evidencia o autorizacion es requerida.</small>
+      }
+    </label>
+  </div>
+
+  @if (errorMessage) {
+    <p class="garantia-error">{{ errorMessage }}</p>
+  }
+
+  @if (successMessage) {
+    <p class="garantia-success">{{ successMessage }}</p>
+  }
+
+  <footer class="garantia-actions">
+    <button
+      pButton
+      type="button"
+      class="garantia-cancel"
+      [disabled]="isSaving"
+      (click)="cancelGarantia()"
+    >
+      <span pButtonLabel>Cancelar</span>
+    </button>
+    <button
+      pButton
+      type="submit"
+      class="garantia-save"
+      [loading]="isSaving"
+      [disabled]="isSaving"
+    >
+      <i class="pi pi-shield" aria-hidden="true"></i>
+      <span pButtonLabel>Guardar validacion</span>
+    </button>
+  </footer>
+</form>

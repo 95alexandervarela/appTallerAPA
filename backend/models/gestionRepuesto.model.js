@@ -32,6 +32,19 @@ const gestionRepuestoSchema = new mongoose.Schema({
     required: [true, 'La descripcion del repuesto es requerida'],
     trim: true
   },
+  tipoRepuesto: {
+    type: String,
+    trim: true
+  },
+  origenRepuesto: {
+    type: String,
+    enum: ['stock', 'compra_externa', 'apa', 'otro'],
+    default: 'stock'
+  },
+  compraExterna: {
+    type: Boolean,
+    default: false
+  },
   cantidad: {
     type: Number,
     default: 1,
@@ -109,6 +122,7 @@ const gestionRepuestoSchema = new mongoose.Schema({
       'pendiente_cotizacion',
       'repuesto_solicitado_apa',
       'repuesto_disponible',
+      'entregado_tecnico',
       'en_excepcion'
     ],
     default: 'pendiente_repuesto'

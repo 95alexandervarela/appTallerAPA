@@ -9,6 +9,9 @@ import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
 import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
 import { UsersService } from '../../core/services/users.service';
+import { DiagnosticoTecnicoComponent } from './diagnostico/diagnostico-tecnico.component';
+import { GarantiaTicketComponent } from './garantia/garantia-ticket.component';
+import { RepuestosTicketComponent } from './repuestos/repuestos-ticket.component';
 
 interface SelectOption {
   label: string;
@@ -30,6 +33,7 @@ interface TicketResumen {
   tecnicoAsignadoId: string;
   tecnicoAsignadoNombre: string;
   estado: string;
+  estadoCodigo: string;
   prioridad: string;
   fechaCreacion: string;
 }
@@ -64,7 +68,17 @@ interface TicketForm {
  */
 @Component({
   selector: 'app-tickets',
-  imports: [FormsModule, ButtonModule, DialogModule, InputTextModule, SelectModule, TagModule],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    DialogModule,
+    DiagnosticoTecnicoComponent,
+    GarantiaTicketComponent,
+    RepuestosTicketComponent,
+    InputTextModule,
+    SelectModule,
+    TagModule,
+  ],
   templateUrl: './tickets.component.html',
   styleUrl: './tickets.component.scss'
 })
@@ -75,6 +89,9 @@ export class TicketsComponent implements OnInit {
   protected isTicketSuccessDialogOpen = false;
   protected isTicketDetailDialogOpen = false;
   protected isAssignTechnicianDialogOpen = false;
+  protected isDiagnosticoDialogOpen = false;
+  protected isGarantiaDialogOpen = false;
+  protected isRepuestosDialogOpen = false;
   protected ticketSubmitted = false;
   protected ticketErrorMessage = '';
   protected ticketSuccessMessage = '';
@@ -82,7 +99,7 @@ export class TicketsComponent implements OnInit {
   protected selectedTechnicianId = '';
   protected isAssigningTicket = false;
   protected selectedTicket: TicketResumen | null = null;
-  private usuarioTemporalId = '';
+  protected usuarioTemporalId = '';
 
   protected readonly origenOptions: SelectOption[] = [
     { label: 'Cliente final', value: 'cliente_final' },
@@ -223,6 +240,7 @@ export class TicketsComponent implements OnInit {
               tecnicoAsignadoId: this.getTechnicianId(response.ticket.tecnicoAsignado),
               tecnicoAsignadoNombre: this.getTechnicianName(response.ticket.tecnicoAsignado),
               estado: this.formatEstado(response.ticket.estadoTicket),
+              estadoCodigo: response.ticket.estadoTicket,
               prioridad: response.ticket.prioridad,
               fechaCreacion: response.ticket.fechaCreacion || '',
             },
@@ -264,6 +282,56 @@ export class TicketsComponent implements OnInit {
     this.isAssignTechnicianDialogOpen = false;
     this.assignTicketErrorMessage = '';
     this.selectedTechnicianId = '';
+  }
+
+  protected openDiagnosticoDialog(): void {
+    if (!this.selectedTicket) return;
+
+    this.isDiagnosticoDialogOpen = true;
+  }
+
+  protected closeDiagnosticoDialog(): void {
+    this.isDiagnosticoDialogOpen = false;
+  }
+
+  protected onDiagnosticoSaved(): void {
+    this.closeDiagnosticoDialog();
+    this.loadTickets();
+  }
+
+  protected openGarantiaDialog(): void {
+    if (!this.selectedTicket) return;
+
+    this.isGarantiaDialogOpen = true;
+  }
+
+  protected closeGarantiaDialog(): void {
+    this.isGarantiaDialogOpen = false;
+  }
+
+  protected onGarantiaSaved(): void {
+    this.closeGarantiaDialog();
+    this.loadTickets();
+  }
+
+  protected openRepuestosDialog(): void {
+    if (!this.selectedTicket || !this.canManageRepuestos()) return;
+
+    this.isRepuestosDialogOpen = true;
+  }
+
+  protected closeRepuestosDialog(): void {
+    this.isRepuestosDialogOpen = false;
+  }
+
+  protected onRepuestoSaved(): void {
+    this.closeRepuestosDialog();
+    this.loadTickets();
+  }
+
+  protected canManageRepuestos(): boolean {
+    if (!this.selectedTicket) return false;
+    return this.selectedTicket.estadoCodigo !== 'pendiente_aprobacion';
   }
 
   protected assignTechnician(): void {
@@ -365,6 +433,7 @@ export class TicketsComponent implements OnInit {
       tecnicoAsignadoId: this.getTechnicianId(ticket.tecnicoAsignado),
       tecnicoAsignadoNombre: this.getTechnicianName(ticket.tecnicoAsignado),
       estado: this.formatEstado(ticket.estadoTicket),
+      estadoCodigo: ticket.estadoTicket,
       prioridad: ticket.prioridad,
       fechaCreacion: ticket.fechaCreacion || '',
     };

@@ -1,0 +1,105 @@
+<form class="diagnostico-form" (ngSubmit)="saveDiagnostico()" novalidate>
+  <div class="diagnostico-summary">
+    <div>
+      <span>Numero de caso</span>
+      <strong>{{ ticket?.numeroCaso || 'Sin ticket' }}</strong>
+    </div>
+    <div>
+      <span>Tecnico asignado</span>
+      <strong>{{ ticket?.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
+    </div>
+    <div class="summary-wide">
+      <span>Falla reportada</span>
+      <strong>{{ ticket?.fallaReportada || 'Sin falla reportada' }}</strong>
+    </div>
+  </div>
+
+  <div class="diagnostico-grid">
+    <label>
+      <span>Falla encontrada</span>
+      <textarea name="fallaEncontrada" [(ngModel)]="form.fallaEncontrada"></textarea>
+      @if (isFieldInvalid('fallaEncontrada')) {
+        <small>Falla encontrada es requerida.</small>
+      }
+    </label>
+
+    <label>
+      <span>Causa probable</span>
+      <textarea name="causaProbable" [(ngModel)]="form.causaProbable"></textarea>
+      @if (isFieldInvalid('causaProbable')) {
+        <small>Causa probable es requerida.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Diagnostico tecnico</span>
+      <textarea name="diagnosticoTecnico" [(ngModel)]="form.diagnosticoTecnico"></textarea>
+      @if (isFieldInvalid('diagnosticoTecnico')) {
+        <small>Diagnostico tecnico es requerido.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Pruebas realizadas</span>
+      <textarea
+        name="pruebasRealizadas"
+        [(ngModel)]="form.pruebasRealizadas"
+        placeholder="Una prueba por linea o separadas por coma"
+      ></textarea>
+      @if (isFieldInvalid('pruebasRealizadas')) {
+        <small>Pruebas realizadas es requerido.</small>
+      }
+    </label>
+
+    <label class="field-wide">
+      <span>Repuestos requeridos</span>
+      <textarea
+        name="repuestosRequeridos"
+        [(ngModel)]="form.repuestosRequeridos"
+        placeholder="Un repuesto por linea o separados por coma"
+      ></textarea>
+      @if (isFieldInvalid('repuestosRequeridos')) {
+        <small>Repuestos requeridos es requerido.</small>
+      }
+    </label>
+
+    <label class="diagnostico-check">
+      <input
+        type="checkbox"
+        name="requiereAutorizacion"
+        [(ngModel)]="form.requiereAutorizacion"
+      />
+      <span>Requiere autorizacion</span>
+    </label>
+  </div>
+
+  @if (errorMessage) {
+    <p class="diagnostico-error">{{ errorMessage }}</p>
+  }
+
+  @if (successMessage) {
+    <p class="diagnostico-success">{{ successMessage }}</p>
+  }
+
+  <footer class="diagnostico-actions">
+    <button
+      pButton
+      type="button"
+      class="diagnostico-cancel"
+      [disabled]="isSaving"
+      (click)="cancelDiagnostico()"
+    >
+      <span pButtonLabel>Cancelar</span>
+    </button>
+    <button
+      pButton
+      type="submit"
+      class="diagnostico-save"
+      [loading]="isSaving"
+      [disabled]="isSaving"
+    >
+      <i class="pi pi-wrench" aria-hidden="true"></i>
+      <span pButtonLabel>Guardar diagnostico</span>
+    </button>
+  </footer>
+</form>

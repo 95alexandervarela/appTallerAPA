@@ -396,6 +396,24 @@
           <i class="pi pi-user-plus" aria-hidden="true"></i>
           <span pButtonLabel>Asignar tecnico</span>
         </button>
+        <button pButton type="button" class="quick-action-button" (click)="openDiagnosticoDialog()">
+          <i class="pi pi-wrench" aria-hidden="true"></i>
+          <span pButtonLabel>Registrar diagnostico</span>
+        </button>
+        <button pButton type="button" class="quick-action-button" (click)="openGarantiaDialog()">
+          <i class="pi pi-shield" aria-hidden="true"></i>
+          <span pButtonLabel>Validar garantia</span>
+        </button>
+        <button
+          pButton
+          type="button"
+          class="quick-action-button"
+          [disabled]="!canManageRepuestos()"
+          (click)="openRepuestosDialog()"
+        >
+          <i class="pi pi-box" aria-hidden="true"></i>
+          <span pButtonLabel>Repuestos</span>
+        </button>
       </footer>
     }
   </p-dialog>
@@ -451,5 +469,59 @@
         </button>
       </footer>
     </div>
+  </p-dialog>
+
+  <p-dialog
+    header="Diagnostico tecnico"
+    styleClass="ticket-diagnostico-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isDiagnosticoDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeDiagnosticoDialog()"
+  >
+    <app-diagnostico-tecnico
+      [ticket]="selectedTicket"
+      [usuarioTemporalId]="usuarioTemporalId"
+      (saved)="onDiagnosticoSaved()"
+      (cancelled)="closeDiagnosticoDialog()"
+    />
+  </p-dialog>
+
+  <p-dialog
+    header="Validacion / garantia"
+    styleClass="ticket-diagnostico-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isGarantiaDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeGarantiaDialog()"
+  >
+    <app-garantia-ticket
+      [ticket]="selectedTicket"
+      [usuarioTemporalId]="usuarioTemporalId"
+      (saved)="onGarantiaSaved()"
+      (cancelled)="closeGarantiaDialog()"
+    />
+  </p-dialog>
+
+  <p-dialog
+    header="Gestion de repuestos"
+    styleClass="ticket-diagnostico-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isRepuestosDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeRepuestosDialog()"
+  >
+    <app-repuestos-ticket
+      [ticket]="selectedTicket"
+      [usuarioTemporalId]="usuarioTemporalId"
+      (saved)="onRepuestoSaved()"
+      (cancelled)="closeRepuestosDialog()"
+    />
   </p-dialog>
 </section>

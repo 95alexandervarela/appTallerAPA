@@ -370,17 +370,32 @@ textarea {
   overflow: hidden;
 }
 
+:host ::ng-deep .ticket-diagnostico-dialog {
+  width: min(860px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  background: rgba(20, 30, 55, 0.88);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.42);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
 :host ::ng-deep .ticket-detail-dialog .p-dialog-header,
-:host ::ng-deep .ticket-detail-dialog .p-dialog-content {
+:host ::ng-deep .ticket-detail-dialog .p-dialog-content,
+:host ::ng-deep .ticket-diagnostico-dialog .p-dialog-header,
+:host ::ng-deep .ticket-diagnostico-dialog .p-dialog-content {
   background: transparent;
   color: #ffffff;
 }
 
-:host ::ng-deep .ticket-detail-dialog .p-dialog-header {
+:host ::ng-deep .ticket-detail-dialog .p-dialog-header,
+:host ::ng-deep .ticket-diagnostico-dialog .p-dialog-header {
   padding: 22px 24px 12px;
 }
 
-:host ::ng-deep .ticket-detail-dialog .p-dialog-content {
+:host ::ng-deep .ticket-detail-dialog .p-dialog-content,
+:host ::ng-deep .ticket-diagnostico-dialog .p-dialog-content {
   padding: 0 24px 24px;
 }
 
@@ -418,6 +433,8 @@ textarea {
 .ticket-detail-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 16px;
 }
 
