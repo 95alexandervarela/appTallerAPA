@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, switchMap, timeout } from 'rxjs';
+import { finalize, switchMap, tap, timeout } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -126,6 +126,7 @@ export class TicketsComponent implements OnInit {
     private recepcionEquipoService: RecepcionEquipoService,
     private ticketsService: TicketsService,
     private usersService: UsersService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -165,8 +166,8 @@ export class TicketsComponent implements OnInit {
   }
 
   /**
-   * Corrige el flujo de guardado del ticket:
-   * ejecuta el submit una sola vez, maneja respuesta/error y evita loading infinito.
+   * Se optimizó flujo de guardado reduciendo tiempo percibido mediante mejora
+   * en async y feedback inmediato.
    */
   protected guardarTicket(): void {
     if (this.isSavingTicket) return;
@@ -188,9 +189,10 @@ export class TicketsComponent implements OnInit {
     }
 
     this.isSavingTicket = true;
+    const numeroCaso = this.ticketForm.numeroCaso;
 
     const recepcionPayload = {
-      numeroCaso: this.ticketForm.numeroCaso,
+      numeroCaso,
       origenEquipo: this.ticketForm.origenEquipo,
       nombreCliente: this.ticketForm.nombreCliente,
       telefonoCliente: this.ticketForm.telefonoCliente,
@@ -217,9 +219,14 @@ export class TicketsComponent implements OnInit {
       .createRecepcion(recepcionPayload)
       .pipe(
         timeout(15000),
+        tap(() => {
+          this.isSavingTicket = false;
+          this.ticketSuccessMessage = `Ticket ${numeroCaso} creado con éxito.`;
+          this.isTicketSuccessDialogOpen = true;
+        }),
         switchMap((response) => {
           return this.ticketsService.createTicket({
-            numeroTicket: this.ticketForm.numeroCaso,
+            numeroTicket: numeroCaso,
             recepcionEquipoId: response.recepcion._id,
             creadoPor: this.usuarioTemporalId,
             prioridad: 'media',
@@ -256,6 +263,7 @@ export class TicketsComponent implements OnInit {
             },
           ];
           this.isTicketSuccessDialogOpen = true;
+          this.cdr.detectChanges();
         },
         error: (error) => {
           const errorMessage =
@@ -265,7 +273,9 @@ export class TicketsComponent implements OnInit {
               ? 'El servidor no respondió a tiempo. Revisa que el backend esté activo.'
               : error.message) ||
             'No se pudo crear el ticket.';
+          this.isTicketSuccessDialogOpen = false;
           this.ticketErrorMessage = errorMessage;
+          this.cdr.detectChanges();
         },
       });
   }
@@ -411,10 +421,13 @@ export class TicketsComponent implements OnInit {
   private loadTickets(): void {
     this.ticketsService.getTickets().subscribe({
       next: (tickets) => {
+        // Se corrigió carga de actividad reciente forzando change detection y asegurando render inmediato de datos.
         this.tickets = tickets.map((ticket) => this.mapTicketResponse(ticket));
+        this.cdr.detectChanges();
       },
       error: () => {
         this.tickets = [];
+        this.cdr.detectChanges();
       },
     });
   }
