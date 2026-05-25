@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, switchMap } from 'rxjs';
+import { finalize, switchMap, timeout } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -80,7 +80,7 @@ interface TicketForm {
     TagModule,
   ],
   templateUrl: './tickets.component.html',
-  styleUrl: './tickets.component.scss'
+  styleUrl: './tickets.component.scss',
 })
 export class TicketsComponent implements OnInit {
   protected vistaActual: 'dashboard' | 'crear' = 'dashboard';
@@ -108,13 +108,13 @@ export class TicketsComponent implements OnInit {
     { label: 'Garantia', value: 'garantia' },
     { label: 'Traslado interno', value: 'traslado_interno' },
     { label: 'Area APA', value: 'area_apa' },
-    { label: 'Otro', value: 'otro' }
+    { label: 'Otro', value: 'otro' },
   ];
 
   protected readonly estadoOptions: SelectOption[] = [
     { label: 'Registrado', value: 'registrado' },
     { label: 'En diagnostico', value: 'en_diagnostico' },
-    { label: 'Equipo no ingresado', value: 'equipo_no_ingresado' }
+    { label: 'Equipo no ingresado', value: 'equipo_no_ingresado' },
   ];
 
   protected tickets: TicketResumen[] = [];
@@ -143,7 +143,7 @@ export class TicketsComponent implements OnInit {
       [ticket.numeroCaso, ticket.cliente, ticket.equipo, ticket.estado]
         .join(' ')
         .toLowerCase()
-        .includes(value)
+        .includes(value),
     );
   }
 
@@ -152,7 +152,7 @@ export class TicketsComponent implements OnInit {
     this.ticketSubmitted = false;
     this.ticketForm = {
       ...this.createEmptyTicketForm(),
-      numeroCaso: this.generarNumeroCasoTemporal()
+      numeroCaso: this.generarNumeroCasoTemporal(),
     };
     this.vistaActual = 'crear';
   }
@@ -164,21 +164,30 @@ export class TicketsComponent implements OnInit {
     this.vistaActual = 'dashboard';
   }
 
+  /**
+   * Corrige el flujo de guardado del ticket:
+   * ejecuta el submit una sola vez, maneja respuesta/error y evita loading infinito.
+   */
   protected guardarTicket(): void {
+    if (this.isSavingTicket) return;
+
     this.ticketSubmitted = true;
+    this.ticketErrorMessage = '';
+    this.ticketSuccessMessage = '';
 
     if (!this.isTicketFormValid()) {
       this.ticketErrorMessage = 'Completa los datos requeridos antes de guardar.';
+      this.isSavingTicket = false;
       return;
     }
 
     if (!this.usuarioTemporalId) {
       this.ticketErrorMessage = 'No hay un usuario disponible para crear el ticket.';
+      this.isSavingTicket = false;
       return;
     }
 
     this.isSavingTicket = true;
-    this.ticketErrorMessage = '';
 
     const recepcionPayload = {
       numeroCaso: this.ticketForm.numeroCaso,
@@ -207,15 +216,16 @@ export class TicketsComponent implements OnInit {
     this.recepcionEquipoService
       .createRecepcion(recepcionPayload)
       .pipe(
-        switchMap((response) =>
-          this.ticketsService.createTicket({
+        timeout(15000),
+        switchMap((response) => {
+          return this.ticketsService.createTicket({
             numeroTicket: this.ticketForm.numeroCaso,
             recepcionEquipoId: response.recepcion._id,
             creadoPor: this.usuarioTemporalId,
             prioridad: 'media',
             estadoTicket: 'creado',
-          }),
-        ),
+          }).pipe(timeout(15000));
+        }),
         finalize(() => {
           this.isSavingTicket = false;
         }),
@@ -248,8 +258,14 @@ export class TicketsComponent implements OnInit {
           this.isTicketSuccessDialogOpen = true;
         },
         error: (error) => {
-          this.ticketErrorMessage =
-            error.error?.error || error.message || 'No se pudo crear el ticket.';
+          const errorMessage =
+            error.error?.error ||
+            error.error?.message ||
+            (error.name === 'TimeoutError'
+              ? 'El servidor no respondió a tiempo. Revisa que el backend esté activo.'
+              : error.message) ||
+            'No se pudo crear el ticket.';
+          this.ticketErrorMessage = errorMessage;
         },
       });
   }
@@ -356,7 +372,7 @@ export class TicketsComponent implements OnInit {
         next: (response) => {
           const updatedTicket = this.mapTicketResponse(response.ticket);
           this.tickets = this.tickets.map((ticket) =>
-            ticket.id === updatedTicket.id ? updatedTicket : ticket
+            ticket.id === updatedTicket.id ? updatedTicket : ticket,
           );
           this.selectedTicket = updatedTicket;
           this.closeAssignTechnicianDialog();
@@ -497,7 +513,7 @@ export class TicketsComponent implements OnInit {
       ingresoAutorizado: true,
       comprobanteEntregado: false,
       equipoEtiquetado: false,
-      estadoRecepcion: 'registrado'
+      estadoRecepcion: 'registrado',
     };
   }
 }

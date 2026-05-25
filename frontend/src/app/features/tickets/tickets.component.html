@@ -355,7 +355,10 @@
         </div>
         <div>
           <span>Marca / modelo</span>
-          <strong>{{ selectedTicket.marcaEquipo || 'Sin marca' }} {{ selectedTicket.modeloEquipo }}</strong>
+          <strong
+            >{{ selectedTicket.marcaEquipo || 'Sin marca' }}
+            {{ selectedTicket.modeloEquipo }}</strong
+          >
         </div>
         <div>
           <span>Serie</span>
@@ -394,7 +397,12 @@
       </div>
 
       <footer class="ticket-detail-actions">
-        <button pButton type="button" class="quick-action-button" (click)="openAssignTechnicianDialog()">
+        <button
+          pButton
+          type="button"
+          class="quick-action-button"
+          (click)="openAssignTechnicianDialog()"
+        >
           <i class="pi pi-user-plus" aria-hidden="true"></i>
           <span pButtonLabel>Asignar tecnico</span>
         </button>
