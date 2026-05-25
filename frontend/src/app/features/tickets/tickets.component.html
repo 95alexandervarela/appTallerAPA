@@ -86,6 +86,7 @@
               optionValue="value"
               [(ngModel)]="ticketForm.origenEquipo"
               placeholder="Seleccionar origen"
+              appendTo="body"
             />
             @if (isFieldInvalid('origenEquipo')) {
               <small>Origen es requerido.</small>
@@ -111,6 +112,7 @@
               optionValue="value"
               [(ngModel)]="ticketForm.estadoRecepcion"
               placeholder="Seleccionar estado"
+              appendTo="body"
             />
           </div>
         </div>

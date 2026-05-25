@@ -49,7 +49,7 @@ export interface TicketResponse {
   providedIn: 'root',
 })
 export class TicketsService {
-  private apiUrl = '/api/tickets';
+  private apiUrl = 'http://localhost:3080/api/tickets';
 
   constructor(private http: HttpClient) {}
 

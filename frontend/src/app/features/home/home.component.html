@@ -24,13 +24,10 @@
   <section class="dashboard-grid">
     <p-card styleClass="glass-widget chart-widget">
       <ng-template #title>Actividad de tickets</ng-template>
-      <div class="chart-placeholder" aria-label="Grafica simulada de tickets">
-        <span style="height: 42%"></span>
-        <span style="height: 74%"></span>
-        <span style="height: 58%"></span>
-        <span style="height: 86%"></span>
-        <span style="height: 64%"></span>
-        <span style="height: 92%"></span>
+      <div class="chart-placeholder" aria-label="Grafica de tickets por estado">
+        @for (bar of chartBars; track bar.label) {
+          <span [style.height.%]="bar.height" [title]="bar.label"></span>
+        }
       </div>
     </p-card>
 
@@ -53,29 +50,21 @@
   <section class="widget-grid">
     <p-card styleClass="glass-widget">
       <ng-template #title>Tickets recientes</ng-template>
-      <div class="ticket-row">
-        <span>APA-0104</span>
-        <strong>Impresora de caja</strong>
-        <p-tag value="Abierto" severity="warn" />
-      </div>
-      <div class="ticket-row">
-        <span>APA-0105</span>
-        <strong>Equipo administrativo</strong>
-        <p-tag value="En progreso" severity="info" />
-      </div>
-      <div class="ticket-row">
-        <span>APA-0106</span>
-        <strong>Lector de codigo</strong>
-        <p-tag value="Pendiente" severity="danger" />
-      </div>
+      @for (ticket of recentTickets; track ticket.id) {
+        <div class="ticket-row">
+          <span>{{ ticket.id }}</span>
+          <strong>{{ ticket.title }}</strong>
+          <p-tag [value]="ticket.status" [severity]="ticket.severity" />
+        </div>
+      }
     </p-card>
 
     <p-card styleClass="glass-widget">
       <ng-template #title>Resumen operativo</ng-template>
       <div class="summary-list">
-        <span>4 tecnicos activos</span>
-        <span>38 min promedio de respuesta</span>
-        <span>92% cumplimiento semanal</span>
+        <span>{{ activeTechnicians }} tecnicos activos</span>
+        <span>{{ avgResponseTime }} promedio de respuesta</span>
+        <span>{{ weeklyCompliance }} cumplimiento semanal</span>
       </div>
     </p-card>
   </section>

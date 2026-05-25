@@ -506,6 +506,14 @@
   background: rgba(52, 211, 153, 0.38) !important;
 }
 
+/* Z-index para overlays de dropdowns */
+:host ::ng-deep .p-select-overlay,
+:host ::ng-deep .p-select-panel,
+:host ::ng-deep .p-dropdown-panel,
+:host ::ng-deep .p-multiselect-panel {
+  z-index: 11000 !important;
+}
+
 @media (max-width: 760px) {
   .users-header {
     flex-direction: column;

@@ -187,6 +187,7 @@
             optionValue="label"
             [(ngModel)]="createUserForm.role"
             placeholder="Seleccionar rol"
+            appendTo="body"
           />
           @if (isFieldInvalid('role')) {
             <small>Rol es requerido.</small>
@@ -333,6 +334,7 @@
             [(ngModel)]="editUserForm.userId"
             placeholder="Seleccionar usuario"
             (ngModelChange)="onEditUserSelected($event)"
+            appendTo="body"
           />
           @if (isEditFieldInvalid('userId')) {
             <small>Selecciona un usuario.</small>
@@ -371,6 +373,7 @@
             optionValue="label"
             [(ngModel)]="editUserForm.role"
             placeholder="Seleccionar rol"
+            appendTo="body"
           />
           @if (isEditFieldInvalid('role')) {
             <small>Rol es requerido.</small>
@@ -386,6 +389,7 @@
             optionValue="value"
             [(ngModel)]="editUserForm.status"
             placeholder="Seleccionar estado"
+            appendTo="body"
           />
           @if (isEditFieldInvalid('status')) {
             <small>Estado es requerido.</small>
