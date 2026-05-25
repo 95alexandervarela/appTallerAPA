@@ -84,6 +84,12 @@
   display: grid;
   gap: 18px;
   padding: 22px;
+  position: relative;
+  z-index: 1;
+}
+
+.form-card:focus-within {
+  z-index: 20;
 }
 
 .card-title h2 {

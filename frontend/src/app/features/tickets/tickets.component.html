@@ -46,12 +46,12 @@
 
         <div class="ticket-list">
           @for (ticket of ticketsFiltrados; track ticket.numeroCaso) {
-            <div class="ticket-row">
+            <button type="button" class="ticket-row" (click)="openTicketDetail(ticket)">
               <span>{{ ticket.numeroCaso }}</span>
               <strong>{{ ticket.cliente }}</strong>
               <em>{{ ticket.equipo }}</em>
               <p-tag [value]="ticket.estado" severity="info" />
-            </div>
+            </button>
           } @empty {
             <div class="empty-row">No hay tickets para mostrar.</div>
           }
@@ -87,6 +87,9 @@
               [(ngModel)]="ticketForm.origenEquipo"
               placeholder="Seleccionar origen"
             />
+            @if (isFieldInvalid('origenEquipo')) {
+              <small>Origen es requerido.</small>
+            }
           </div>
 
           <label>
@@ -127,6 +130,9 @@
               name="nombreCliente"
               [(ngModel)]="ticketForm.nombreCliente"
             />
+            @if (isFieldInvalid('nombreCliente')) {
+              <small>Nombre del cliente es requerido.</small>
+            }
           </label>
 
           <label>
@@ -137,6 +143,9 @@
               name="telefonoCliente"
               [(ngModel)]="ticketForm.telefonoCliente"
             />
+            @if (isFieldInvalid('telefonoCliente')) {
+              <small>Telefono es requerido.</small>
+            }
           </label>
 
           <label>
@@ -170,6 +179,9 @@
           <label>
             <span>Tipo de equipo</span>
             <input pInputText type="text" name="tipoEquipo" [(ngModel)]="ticketForm.tipoEquipo" />
+            @if (isFieldInvalid('tipoEquipo')) {
+              <small>Tipo de equipo es requerido.</small>
+            }
           </label>
 
           <label>
@@ -195,11 +207,17 @@
           <label class="form-field-wide">
             <span>Falla reportada</span>
             <textarea name="fallaReportada" [(ngModel)]="ticketForm.fallaReportada"></textarea>
+            @if (isFieldInvalid('fallaReportada')) {
+              <small>Falla reportada es requerida.</small>
+            }
           </label>
 
           <label class="form-field-wide">
             <span>Condicion fisica inicial</span>
             <textarea name="condicionFisica" [(ngModel)]="ticketForm.condicionFisica"></textarea>
+            @if (isFieldInvalid('condicionFisica')) {
+              <small>Condicion fisica es requerida.</small>
+            }
           </label>
 
           <label class="form-field-wide">
@@ -284,4 +302,154 @@
       </section>
     </form>
   }
+
+  <p-dialog
+    styleClass="ticket-success-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isTicketSuccessDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="false"
+  >
+    <div class="ticket-success-content">
+      <span class="ticket-success-icon" aria-hidden="true">✓</span>
+      <h3>Ticket creado</h3>
+      <p>{{ ticketSuccessMessage }}</p>
+
+      <button pButton type="button" class="success-ok-button" (click)="closeTicketSuccessDialog()">
+        <span pButtonLabel>OK</span>
+      </button>
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    header="Detalle del ticket"
+    styleClass="ticket-detail-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isTicketDetailDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeTicketDetail()"
+  >
+    @if (selectedTicket) {
+      <div class="ticket-detail-content">
+        <div>
+          <span>Numero de caso</span>
+          <strong>{{ selectedTicket.numeroCaso }}</strong>
+        </div>
+        <div>
+          <span>Cliente</span>
+          <strong>{{ selectedTicket.cliente }}</strong>
+        </div>
+        <div>
+          <span>Telefono</span>
+          <strong>{{ selectedTicket.telefonoCliente || 'Sin telefono' }}</strong>
+        </div>
+        <div>
+          <span>Equipo</span>
+          <strong>{{ selectedTicket.equipo }}</strong>
+        </div>
+        <div>
+          <span>Marca / modelo</span>
+          <strong>{{ selectedTicket.marcaEquipo || 'Sin marca' }} {{ selectedTicket.modeloEquipo }}</strong>
+        </div>
+        <div>
+          <span>Serie</span>
+          <strong>{{ selectedTicket.serieEquipo || 'Sin serie' }}</strong>
+        </div>
+        <div class="detail-wide">
+          <span>Falla reportada</span>
+          <strong>{{ selectedTicket.fallaReportada || 'Sin detalle' }}</strong>
+        </div>
+        <div class="detail-wide">
+          <span>Condicion fisica</span>
+          <strong>{{ selectedTicket.condicionFisica || 'Sin detalle' }}</strong>
+        </div>
+        <div class="detail-wide">
+          <span>Accesorios</span>
+          <strong>
+            {{
+              selectedTicket.accesoriosEntregados.length
+                ? selectedTicket.accesoriosEntregados.join(', ')
+                : 'Sin accesorios'
+            }}
+          </strong>
+        </div>
+        <div>
+          <span>Estado</span>
+          <strong>{{ selectedTicket.estado }}</strong>
+        </div>
+        <div>
+          <span>Prioridad</span>
+          <strong>{{ selectedTicket.prioridad }}</strong>
+        </div>
+        <div>
+          <span>Tecnico asignado</span>
+          <strong>{{ selectedTicket.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
+        </div>
+      </div>
+
+      <footer class="ticket-detail-actions">
+        <button pButton type="button" class="quick-action-button" (click)="openAssignTechnicianDialog()">
+          <i class="pi pi-user-plus" aria-hidden="true"></i>
+          <span pButtonLabel>Asignar tecnico</span>
+        </button>
+      </footer>
+    }
+  </p-dialog>
+
+  <p-dialog
+    header="Asignar tecnico"
+    styleClass="ticket-detail-dialog"
+    maskStyleClass="ticket-dialog-mask"
+    [(visible)]="isAssignTechnicianDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeAssignTechnicianDialog()"
+  >
+    <div class="assign-technician-content">
+      <div class="form-field">
+        <span>Tecnico</span>
+        <p-select
+          name="selectedTechnician"
+          [options]="technicianOptions"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="selectedTechnicianId"
+          placeholder="Seleccionar tecnico"
+          appendTo="body"
+        />
+      </div>
+
+      @if (assignTicketErrorMessage) {
+        <p class="form-error">{{ assignTicketErrorMessage }}</p>
+      }
+
+      <footer class="form-actions">
+        <button
+          pButton
+          type="button"
+          class="cancel-button"
+          [disabled]="isAssigningTicket"
+          (click)="closeAssignTechnicianDialog()"
+        >
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button
+          pButton
+          type="button"
+          class="save-button"
+          [loading]="isAssigningTicket"
+          [disabled]="isAssigningTicket"
+          (click)="assignTechnician()"
+        >
+          <i class="pi pi-user-plus" aria-hidden="true"></i>
+          <span pButtonLabel>Asignar</span>
+        </button>
+      </footer>
+    </div>
+  </p-dialog>
 </section>

@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, switchMap } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
-import { TicketsService } from '../../core/services/tickets.service';
+import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
 import { UsersService } from '../../core/services/users.service';
 
 interface SelectOption {
@@ -15,11 +16,22 @@ interface SelectOption {
 }
 
 interface TicketResumen {
+  id: string;
   numeroCaso: string;
   cliente: string;
+  telefonoCliente: string;
   equipo: string;
+  marcaEquipo: string;
+  modeloEquipo: string;
+  serieEquipo: string;
+  fallaReportada: string;
+  condicionFisica: string;
+  accesoriosEntregados: string[];
+  tecnicoAsignadoId: string;
+  tecnicoAsignadoNombre: string;
   estado: string;
   prioridad: string;
+  fechaCreacion: string;
 }
 
 interface TicketForm {
@@ -52,7 +64,7 @@ interface TicketForm {
  */
 @Component({
   selector: 'app-tickets',
-  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, TagModule],
+  imports: [FormsModule, ButtonModule, DialogModule, InputTextModule, SelectModule, TagModule],
   templateUrl: './tickets.component.html',
   styleUrl: './tickets.component.scss'
 })
@@ -60,7 +72,16 @@ export class TicketsComponent implements OnInit {
   protected vistaActual: 'dashboard' | 'crear' = 'dashboard';
   protected busquedaTicket = '';
   protected isSavingTicket = false;
+  protected isTicketSuccessDialogOpen = false;
+  protected isTicketDetailDialogOpen = false;
+  protected isAssignTechnicianDialogOpen = false;
+  protected ticketSubmitted = false;
   protected ticketErrorMessage = '';
+  protected ticketSuccessMessage = '';
+  protected assignTicketErrorMessage = '';
+  protected selectedTechnicianId = '';
+  protected isAssigningTicket = false;
+  protected selectedTicket: TicketResumen | null = null;
   private usuarioTemporalId = '';
 
   protected readonly origenOptions: SelectOption[] = [
@@ -80,6 +101,7 @@ export class TicketsComponent implements OnInit {
   ];
 
   protected tickets: TicketResumen[] = [];
+  protected technicianOptions: SelectOption[] = [];
 
   protected ticketForm: TicketForm = this.createEmptyTicketForm();
 
@@ -91,6 +113,7 @@ export class TicketsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUsuarioTemporal();
+    this.loadTechnicians();
     this.loadTickets();
   }
 
@@ -109,6 +132,7 @@ export class TicketsComponent implements OnInit {
 
   protected abrirFormulario(): void {
     this.ticketErrorMessage = '';
+    this.ticketSubmitted = false;
     this.ticketForm = {
       ...this.createEmptyTicketForm(),
       numeroCaso: this.generarNumeroCasoTemporal()
@@ -119,10 +143,18 @@ export class TicketsComponent implements OnInit {
   protected cancelarCreacion(): void {
     this.ticketForm = this.createEmptyTicketForm();
     this.ticketErrorMessage = '';
+    this.ticketSubmitted = false;
     this.vistaActual = 'dashboard';
   }
 
   protected guardarTicket(): void {
+    this.ticketSubmitted = true;
+
+    if (!this.isTicketFormValid()) {
+      this.ticketErrorMessage = 'Completa los datos requeridos antes de guardar.';
+      return;
+    }
+
     if (!this.usuarioTemporalId) {
       this.ticketErrorMessage = 'No hay un usuario disponible para crear el ticket.';
       return;
@@ -173,23 +205,103 @@ export class TicketsComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
+          this.ticketSuccessMessage = `Ticket ${response.ticket.numeroTicket} creado con éxito.`;
           this.tickets = [
             ...this.tickets,
             {
+              id: response.ticket._id,
               numeroCaso: response.ticket.numeroTicket,
               cliente: response.ticket.nombreCliente,
+              telefonoCliente: response.ticket.telefonoCliente || '',
               equipo: response.ticket.tipoEquipo,
+              marcaEquipo: response.ticket.marcaEquipo || '',
+              modeloEquipo: response.ticket.modeloEquipo || '',
+              serieEquipo: response.ticket.serieEquipo || '',
+              fallaReportada: response.ticket.fallaReportada || '',
+              condicionFisica: response.ticket.condicionFisica || '',
+              accesoriosEntregados: response.ticket.accesoriosEntregados || [],
+              tecnicoAsignadoId: this.getTechnicianId(response.ticket.tecnicoAsignado),
+              tecnicoAsignadoNombre: this.getTechnicianName(response.ticket.tecnicoAsignado),
               estado: this.formatEstado(response.ticket.estadoTicket),
               prioridad: response.ticket.prioridad,
+              fechaCreacion: response.ticket.fechaCreacion || '',
             },
           ];
-          this.cancelarCreacion();
+          this.isTicketSuccessDialogOpen = true;
         },
         error: (error) => {
           this.ticketErrorMessage =
             error.error?.error || error.message || 'No se pudo crear el ticket.';
         },
       });
+  }
+
+  protected closeTicketSuccessDialog(): void {
+    this.isTicketSuccessDialogOpen = false;
+    this.ticketSuccessMessage = '';
+    this.cancelarCreacion();
+    this.loadTickets();
+  }
+
+  protected openTicketDetail(ticket: TicketResumen): void {
+    this.selectedTicket = ticket;
+    this.isTicketDetailDialogOpen = true;
+  }
+
+  protected closeTicketDetail(): void {
+    this.isTicketDetailDialogOpen = false;
+  }
+
+  protected openAssignTechnicianDialog(): void {
+    if (!this.selectedTicket) return;
+
+    this.assignTicketErrorMessage = '';
+    this.selectedTechnicianId = this.selectedTicket.tecnicoAsignadoId;
+    this.isAssignTechnicianDialogOpen = true;
+  }
+
+  protected closeAssignTechnicianDialog(): void {
+    this.isAssignTechnicianDialogOpen = false;
+    this.assignTicketErrorMessage = '';
+    this.selectedTechnicianId = '';
+  }
+
+  protected assignTechnician(): void {
+    if (!this.selectedTicket) return;
+
+    if (!this.selectedTechnicianId) {
+      this.assignTicketErrorMessage = 'Selecciona un tecnico para asignar el ticket.';
+      return;
+    }
+
+    this.isAssigningTicket = true;
+    this.assignTicketErrorMessage = '';
+
+    this.ticketsService
+      .assignTechnician(this.selectedTicket.id, { tecnicoAsignado: this.selectedTechnicianId })
+      .pipe(
+        finalize(() => {
+          this.isAssigningTicket = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          const updatedTicket = this.mapTicketResponse(response.ticket);
+          this.tickets = this.tickets.map((ticket) =>
+            ticket.id === updatedTicket.id ? updatedTicket : ticket
+          );
+          this.selectedTicket = updatedTicket;
+          this.closeAssignTechnicianDialog();
+        },
+        error: (error) => {
+          this.assignTicketErrorMessage =
+            error.error?.error || error.message || 'No se pudo asignar el tecnico.';
+        },
+      });
+  }
+
+  protected isFieldInvalid(field: keyof TicketForm): boolean {
+    return this.ticketSubmitted && !String(this.ticketForm[field]).trim();
   }
 
   private generarNumeroCasoTemporal(): string {
@@ -215,18 +327,57 @@ export class TicketsComponent implements OnInit {
   private loadTickets(): void {
     this.ticketsService.getTickets().subscribe({
       next: (tickets) => {
-        this.tickets = tickets.map((ticket) => ({
-          numeroCaso: ticket.numeroTicket,
-          cliente: ticket.nombreCliente,
-          equipo: ticket.tipoEquipo,
-          estado: this.formatEstado(ticket.estadoTicket),
-          prioridad: ticket.prioridad,
-        }));
+        this.tickets = tickets.map((ticket) => this.mapTicketResponse(ticket));
       },
       error: () => {
         this.tickets = [];
       },
     });
+  }
+
+  private loadTechnicians(): void {
+    this.ticketsService.getTechnicians().subscribe({
+      next: (technicians) => {
+        this.technicianOptions = technicians.map((technician) => ({
+          label: technician.nombre_completo,
+          value: technician._id,
+        }));
+      },
+      error: () => {
+        this.technicianOptions = [];
+      },
+    });
+  }
+
+  private mapTicketResponse(ticket: any): TicketResumen {
+    return {
+      id: ticket._id,
+      numeroCaso: ticket.numeroTicket,
+      cliente: ticket.nombreCliente,
+      telefonoCliente: ticket.telefonoCliente || '',
+      equipo: ticket.tipoEquipo,
+      marcaEquipo: ticket.marcaEquipo || '',
+      modeloEquipo: ticket.modeloEquipo || '',
+      serieEquipo: ticket.serieEquipo || '',
+      fallaReportada: ticket.fallaReportada || '',
+      condicionFisica: ticket.condicionFisica || '',
+      accesoriosEntregados: ticket.accesoriosEntregados || [],
+      tecnicoAsignadoId: this.getTechnicianId(ticket.tecnicoAsignado),
+      tecnicoAsignadoNombre: this.getTechnicianName(ticket.tecnicoAsignado),
+      estado: this.formatEstado(ticket.estadoTicket),
+      prioridad: ticket.prioridad,
+      fechaCreacion: ticket.fechaCreacion || '',
+    };
+  }
+
+  private getTechnicianId(value: TechnicianOption | string | null | undefined): string {
+    if (!value) return '';
+    return typeof value === 'string' ? value : value._id;
+  }
+
+  private getTechnicianName(value: TechnicianOption | string | null | undefined): string {
+    if (!value || typeof value === 'string') return '';
+    return value.nombre_completo || value.username;
   }
 
   private parseAccesorios(value: string): string[] {
@@ -241,6 +392,19 @@ export class TicketsComponent implements OnInit {
       .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  }
+
+  private isTicketFormValid(): boolean {
+    const requiredFields: Array<keyof TicketForm> = [
+      'origenEquipo',
+      'nombreCliente',
+      'telefonoCliente',
+      'tipoEquipo',
+      'fallaReportada',
+      'condicionFisica',
+    ];
+
+    return requiredFields.every((field) => String(this.ticketForm[field]).trim());
   }
 
   private createEmptyTicketForm(): TicketForm {

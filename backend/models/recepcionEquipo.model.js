@@ -109,6 +109,10 @@ const recepcionEquipoSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  activo: {
+    type: Boolean,
+    default: true
+  },
   estadoRecepcion: {
     type: String,
     enum: ['registrado', 'en_diagnostico', 'equipo_no_ingresado'],
@@ -137,6 +141,10 @@ const recepcionEquipoSchema = new mongoose.Schema({
   fechaActualizacion: {
     type: Date,
     default: Date.now
+  },
+  fechaEliminacion: {
+    type: Date,
+    default: null
   }
 }, {
   collection: 'recepciones_equipo',

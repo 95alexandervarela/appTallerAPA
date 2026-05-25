@@ -5,6 +5,12 @@ const userRoutes = require("./routes/user.routes");
 const roleRoutes = require("./routes/role.routes");
 const recepcionEquipoRoutes = require("./routes/recepcionEquipo.routes");
 const ticketRoutes = require("./routes/ticket.routes");
+const diagnosticoTecnicoRoutes = require("./routes/diagnosticoTecnico.routes");
+const validacionGarantiaRoutes = require("./routes/validacionGarantia.routes");
+const gestionRepuestoRoutes = require("./routes/gestionRepuesto.routes");
+const reparacionEquipoRoutes = require("./routes/reparacionEquipo.routes");
+const cobroFacturacionRoutes = require("./routes/cobroFacturacion.routes");
+const entregaEquipoRoutes = require("./routes/entregaEquipo.routes");
 
 /**
  * Punto de entrada principal para el Servidor del Help Desk (Taller APA).
@@ -43,6 +49,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/recepciones-equipo", recepcionEquipoRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/diagnosticos-tecnicos", diagnosticoTecnicoRoutes);
+app.use("/api/validaciones-garantia", validacionGarantiaRoutes);
+app.use("/api/gestiones-repuesto", gestionRepuestoRoutes);
+app.use("/api/reparaciones-equipo", reparacionEquipoRoutes);
+app.use("/api/cobros-facturacion", cobroFacturacionRoutes);
+app.use("/api/entregas-equipo", entregaEquipoRoutes);
 
 // Manejo de rutas no encontradas (404)
 app.use((req, res) => {

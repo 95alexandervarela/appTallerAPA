@@ -151,12 +151,34 @@
   grid-template-columns: 112px minmax(0, 1fr) minmax(90px, 0.7fr) 92px;
   align-items: center;
   gap: 12px;
+  width: 100%;
   min-height: 48px;
+  padding: 0;
+  border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .ticket-row:last-child {
   border-bottom: 0;
+}
+
+.ticket-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 3px 0 0 rgba(14, 165, 233, 0.42);
+  transform: translateY(-1px);
+}
+
+.ticket-row:focus-visible {
+  outline: 2px solid rgba(14, 165, 233, 0.6);
+  outline-offset: 2px;
 }
 
 .ticket-row strong {
@@ -176,6 +198,7 @@
 
 .ticket-form {
   display: grid;
+  gap: 18px;
   animation: screen-enter 260ms ease both;
 }
 
@@ -203,6 +226,11 @@
 .form-field {
   display: grid;
   gap: 8px;
+}
+
+.form-grid small {
+  color: #fecaca;
+  font-size: 0.76rem;
 }
 
 .form-field-wide {
@@ -235,6 +263,11 @@ textarea {
 
 :host ::ng-deep .p-select-label {
   color: #ffffff;
+}
+
+:host ::ng-deep .p-select-overlay,
+:host ::ng-deep .p-select-panel {
+  z-index: 1200 !important;
 }
 
 textarea {
@@ -305,6 +338,130 @@ textarea {
   box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
 }
 
+:host ::ng-deep .ticket-dialog-mask {
+  backdrop-filter: blur(8px);
+}
+
+:host ::ng-deep .ticket-success-dialog {
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 22px;
+  background: rgba(20, 30, 55, 0.82);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.42);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .ticket-success-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+  padding: 28px;
+}
+
+:host ::ng-deep .ticket-detail-dialog {
+  width: min(680px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  background: rgba(20, 30, 55, 0.86);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.42);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .ticket-detail-dialog .p-dialog-header,
+:host ::ng-deep .ticket-detail-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+}
+
+:host ::ng-deep .ticket-detail-dialog .p-dialog-header {
+  padding: 22px 24px 12px;
+}
+
+:host ::ng-deep .ticket-detail-dialog .p-dialog-content {
+  padding: 0 24px 24px;
+}
+
+.ticket-detail-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ticket-detail-content div {
+  display: grid;
+  gap: 6px;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ticket-detail-content span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+}
+
+.ticket-detail-content strong {
+  color: #ffffff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ticket-detail-content .detail-wide {
+  grid-column: 1 / -1;
+}
+
+.ticket-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.assign-technician-content {
+  display: grid;
+  gap: 16px;
+}
+
+.ticket-success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.ticket-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  border-radius: 50%;
+  background: rgba(52, 211, 153, 0.16);
+  color: #bbf7d0;
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.ticket-success-content h3,
+.ticket-success-content p {
+  margin: 0;
+}
+
+.success-ok-button {
+  min-width: 110px;
+  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+  border-radius: 999px !important;
+  background: rgba(52, 211, 153, 0.28) !important;
+  color: #ffffff !important;
+  margin-top: 8px;
+}
+
 @media (max-width: 940px) {
   .tickets-dashboard,
   .form-grid,
@@ -315,5 +472,9 @@ textarea {
   .ticket-row {
     grid-template-columns: 1fr;
     padding: 12px 0;
+  }
+
+  .ticket-detail-content {
+    grid-template-columns: 1fr;
   }
 }

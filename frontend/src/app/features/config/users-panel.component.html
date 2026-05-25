@@ -3,7 +3,7 @@
     <div>
       <span>Usuarios</span>
       <h2>Gestion de usuarios</h2>
-      <p>Administra accesos simulados para el equipo de Taller.</p>
+      <p>Administra accesos para el equipo de Taller.</p>
     </div>
 
     <div class="users-header-actions">
@@ -354,12 +354,7 @@
 
         <label>
           <span>Correo</span>
-          <input
-            pInputText
-            type="email"
-            name="editEmail"
-            [(ngModel)]="editUserForm.email"
-          />
+          <input pInputText type="email" name="editEmail" [(ngModel)]="editUserForm.email" />
           @if (isEditFieldInvalid('email')) {
             <small>Correo es requerido.</small>
           } @else if (isEditEmailInvalid()) {
@@ -439,7 +434,8 @@
         <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
         <p>
           ¿Deseas eliminar el usuario
-          <strong>{{ selectedUser.name }}</strong>?
+          <strong>{{ selectedUser.name }}</strong
+          >?
         </p>
         <span>Esta acción borrará el registro y podrás volver a agregarlo si lo necesitas.</span>
 
