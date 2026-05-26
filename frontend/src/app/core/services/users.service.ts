@@ -11,6 +11,18 @@ export interface CreateUserPayload {
   activo?: boolean;
 }
 
+export interface RoleResponse {
+  _id: string;
+  codigo: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword?: string;
+  newPassword: string;
+}
+
 export interface UserResponse {
   message: string;
   user: {
@@ -19,6 +31,9 @@ export interface UserResponse {
     email: string;
     nombre_completo: string;
     rol_id: string;
+    roleId: string;
+    roleCode: string;
+    roleName: string;
     activo: boolean;
     fecha_creacion: string;
     fecha_actualizacion: string;
@@ -37,6 +52,7 @@ export interface UserResponse {
 })
 export class UsersService {
   private apiUrl = '/api/users';
+  private rolesApiUrl = '/api/roles';
 
   constructor(private http: HttpClient) {}
 
@@ -60,6 +76,15 @@ export class UsersService {
   }
 
   /**
+   * Obtiene los roles activos disponibles.
+   *
+   * @returns Observable con la lista de roles
+   */
+  getRoles(): Observable<RoleResponse[]> {
+    return this.http.get<RoleResponse[]>(this.rolesApiUrl);
+  }
+
+  /**
    * Obtiene un usuario específico por su ID.
    *
    * @param id ID del usuario
@@ -78,6 +103,17 @@ export class UsersService {
    */
   updateUser(id: string, payload: Partial<CreateUserPayload>): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, payload);
+  }
+
+  /**
+   * Cambia la contraseña de un usuario.
+   *
+   * @param id ID del usuario
+   * @param payload Nueva contraseña y contraseña actual opcional
+   * @returns Observable con la respuesta del servidor
+   */
+  changePassword(id: string, payload: ChangePasswordPayload): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/change-password`, payload);
   }
 
   /**

@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, map, switchMap } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -46,6 +46,8 @@ interface EditUserForm {
   email: string;
   role: string;
   status: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 /**
@@ -73,6 +75,7 @@ export class UsersPanelComponent implements OnInit {
   protected editUserSubmitted = false;
   protected createUserSuccessMessage = '';
   protected createUserErrorMessage = '';
+  protected editUserSuccessMessage = '';
   protected editUserErrorMessage = '';
   protected deleteUserErrorMessage = '';
   protected deleteUserSuccessMessage = '';
@@ -88,7 +91,6 @@ export class UsersPanelComponent implements OnInit {
     { label: 'Activo', value: 'activo' },
     { label: 'Inactivo', value: 'inactivo' },
   ];
-  protected roleMap: Map<string, string> = new Map(); // Mapea nombre a rol_id
   protected roleLabelMap: Map<string, string> = new Map(); // Mapea rol_id a nombre visible
   protected users: UserRow[] = [];
   protected selectedUser: UserRow | null = null;
@@ -102,19 +104,25 @@ export class UsersPanelComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Cargar los roles disponibles
-    this.roleOptions = [
-      { label: 'Administrador', value: '6a126c9296a6e0cb6e9df8a3' },
-      { label: 'Tecnico', value: '6a126c9296a6e0cb6e9df8a4' },
-    ];
-
-    this.roleOptions.forEach((role) => {
-      this.roleMap.set(role.label, role.value);
-      this.roleLabelMap.set(role.value, role.label);
-    });
-
-    // Cargar usuarios de la base de datos
+    this.loadRoles();
     this.loadUsers();
+  }
+
+  private loadRoles(): void {
+    this.usersService.getRoles().subscribe({
+      next: (roles) => {
+        roles.forEach((role) => {
+          this.mergeRoleOption({
+            label: role.nombre,
+            value: role._id,
+          });
+        });
+      },
+      error: () => {
+        this.mergeRoleOption({ label: 'Administrador', value: '6a126c9296a6e0cb6e9df8a3' });
+        this.mergeRoleOption({ label: 'Tecnico', value: '6a126c9296a6e0cb6e9df8a4' });
+      },
+    });
   }
 
   /**
@@ -143,13 +151,20 @@ export class UsersPanelComponent implements OnInit {
             username: user.username,
             email: user.email,
             name: user.nombre_completo,
-            role: this.roleLabelMap.get(user.rol_id) || user.rol_id,
-            roleId: user.rol_id,
+            role: user.roleName || this.roleLabelMap.get(user.roleId || user.rol_id) || 'Desconocido',
+            roleId: user.roleId || user.rol_id,
             activo: user.activo,
             status: user.activo ? 'Activo' : 'Inactivo',
             severity: user.activo ? 'success' : 'warn',
           }));
-          console.log('Usuarios cargados:', this.users);
+          users.forEach((user) => {
+            if (user.roleId && user.roleName) {
+              this.mergeRoleOption({
+                label: user.roleName,
+                value: user.roleId,
+              });
+            }
+          });
         },
         error: (error) => {
           console.error('Error al cargar usuarios:', error);
@@ -184,6 +199,7 @@ export class UsersPanelComponent implements OnInit {
 
     this.editUserSubmitted = false;
     this.editUserErrorMessage = '';
+    this.editUserSuccessMessage = '';
     this.applyUserToEditForm(user);
     this.isEditUserDialogOpen = true;
   }
@@ -192,6 +208,7 @@ export class UsersPanelComponent implements OnInit {
     this.isEditUserDialogOpen = false;
     this.editUserSubmitted = false;
     this.editUserErrorMessage = '';
+    this.editUserSuccessMessage = '';
     this.editUserForm = this.createEmptyEditUserForm();
   }
 
@@ -250,15 +267,26 @@ export class UsersPanelComponent implements OnInit {
 
     this.editUserSubmitted = true;
     this.editUserErrorMessage = '';
+    this.editUserSuccessMessage = '';
 
     if (!this.isEditUserFormValid()) {
+      return;
+    }
+
+    if (this.isEditPasswordIncomplete()) {
+      this.editUserErrorMessage = '⚠️ Completa la nueva contraseña y su confirmación.';
+      return;
+    }
+
+    if (this.isEditPasswordMismatch()) {
+      this.editUserErrorMessage = '⚠️ Las contraseñas no coinciden.';
       return;
     }
 
     const payload = {
       nombre_completo: this.editUserForm.nombre_completo.trim(),
       email: this.editUserForm.email.toLowerCase().trim(),
-      rol_id: this.roleMap.get(this.editUserForm.role) || '',
+      rol_id: this.editUserForm.role,
       activo: this.editUserForm.status === 'activo',
     };
 
@@ -268,8 +296,21 @@ export class UsersPanelComponent implements OnInit {
     }
 
     this.isLoadingEditUser = true;
+    const shouldChangePassword = this.hasEditPasswordInput();
+    const updateUser$ = this.usersService.updateUser(this.editUserForm.userId, payload);
+    const saveUser$ = shouldChangePassword
+      ? updateUser$.pipe(
+          switchMap((response) =>
+            this.usersService
+              .changePassword(this.editUserForm.userId, {
+                newPassword: this.editUserForm.newPassword,
+              })
+              .pipe(map(() => response)),
+          ),
+        )
+      : updateUser$;
 
-    this.usersService.updateUser(this.editUserForm.userId, payload).subscribe({
+    saveUser$.subscribe({
       next: (response: any) => {
         this.isLoadingEditUser = false;
         const updatedUser = response.user;
@@ -280,22 +321,32 @@ export class UsersPanelComponent implements OnInit {
             username: updatedUser.username,
             email: updatedUser.email,
             name: updatedUser.nombre_completo,
-            role: this.roleLabelMap.get(updatedUser.rol_id) || updatedUser.rol_id,
-            roleId: updatedUser.rol_id,
+            role: updatedUser.roleName || this.roleLabelMap.get(updatedUser.roleId || updatedUser.rol_id) || 'Desconocido',
+            roleId: updatedUser.roleId || updatedUser.rol_id,
             activo: updatedUser.activo,
             status: updatedUser.activo ? 'Activo' : 'Inactivo',
             severity: updatedUser.activo ? 'success' : 'warn',
           };
         }
 
-        this.closeEditUserDialog();
         this.loadUsers();
+        if (shouldChangePassword) {
+          this.editUserSuccessMessage = 'Contraseña actualizada correctamente';
+          this.editUserForm.newPassword = '';
+          this.editUserForm.confirmPassword = '';
+          return;
+        }
+
+        this.closeEditUserDialog();
+        this.changeDetectorRef.detectChanges();
       },
       error: (error: any) => {
         this.isLoadingEditUser = false;
-        console.error('Error al editar usuario:', error);
+        const fallbackError = shouldChangePassword
+          ? 'Error al actualizar contraseña'
+          : 'Error al editar el usuario. Intenta nuevamente.';
         const errorMsg =
-          error.error?.error || error.message || 'Error al editar el usuario. Intenta nuevamente.';
+          error.error?.error || error.message || fallbackError;
         this.editUserErrorMessage = `⚠️ ${errorMsg}`;
       },
     });
@@ -325,8 +376,6 @@ export class UsersPanelComponent implements OnInit {
         this.isDeleteSuccessDialogOpen = true;
       },
       error: (error: any) => {
-        console.error('Error al eliminar usuario:', error);
-
         if (error.status === 404) {
           this.deletedUserName = userName;
           this.deleteUserSuccessMessage = 'Usuario eliminado con éxito.';
@@ -370,7 +419,7 @@ export class UsersPanelComponent implements OnInit {
       email: this.createUserForm.email.toLowerCase().trim(),
       nombre_completo: `${this.createUserForm.firstName} ${this.createUserForm.lastName}`.trim(),
       password: this.createUserForm.password,
-      rol_id: this.roleMap.get(this.createUserForm.role) || '',
+      rol_id: this.createUserForm.role,
     };
 
     const duplicateUser = this.users.find(
@@ -410,8 +459,6 @@ export class UsersPanelComponent implements OnInit {
         this.isSuccessDialogOpen = true;
       },
       error: (error: any) => {
-        console.error('Error completo:', error);
-        console.error('Respuesta del backend:', error.error);
         const errorMsg =
           error.error?.error || error.message || 'Error al crear el usuario. Intenta nuevamente.';
         this.createUserErrorMessage = `⚠️ ${errorMsg}`;
@@ -437,6 +484,15 @@ export class UsersPanelComponent implements OnInit {
     const email = this.editUserForm.email.trim();
 
     return this.editUserSubmitted && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  protected isEditPasswordMismatch(): boolean {
+    return (
+      this.editUserSubmitted &&
+      !!this.editUserForm.newPassword &&
+      !!this.editUserForm.confirmPassword &&
+      this.editUserForm.newPassword !== this.editUserForm.confirmPassword
+    );
   }
 
   protected isPasswordMismatch(): boolean {
@@ -498,6 +554,8 @@ export class UsersPanelComponent implements OnInit {
       email: '',
       role: '',
       status: 'activo',
+      newPassword: '',
+      confirmPassword: '',
     };
   }
 
@@ -520,9 +578,29 @@ export class UsersPanelComponent implements OnInit {
       userId: user.id,
       nombre_completo: user.name,
       email: user.email,
-      role: this.roleLabelMap.get(user.roleId) || user.role,
+      role: user.roleId,
       status: user.activo ? 'activo' : 'inactivo',
+      newPassword: '',
+      confirmPassword: '',
     };
+  }
+
+  private hasEditPasswordInput(): boolean {
+    return !!this.editUserForm.newPassword || !!this.editUserForm.confirmPassword;
+  }
+
+  protected isEditPasswordIncomplete(): boolean {
+    return this.hasEditPasswordInput()
+      && (!this.editUserForm.newPassword || !this.editUserForm.confirmPassword);
+  }
+
+  private mergeRoleOption(role: RoleOption): void {
+    if (!role.value || this.roleLabelMap.has(role.value)) return;
+
+    this.roleOptions = [...this.roleOptions, role].sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+    this.roleLabelMap.set(role.value, role.label);
   }
 
   private normalizeUsername(value: string): string {

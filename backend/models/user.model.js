@@ -109,6 +109,22 @@ userSchema.pre(/^find/, function () {
 });
 
 /**
+ * Establece una nueva contraseña usando el hash PBKDF2 del modelo.
+ *
+ * @param {string} plainPassword - Contraseña en texto plano a persistir como hash.
+ * @returns {void}
+ */
+userSchema.methods.setPassword = function (plainPassword) {
+  if (typeof plainPassword !== 'string' || !plainPassword) {
+    throw new Error('La contraseña es requerida');
+  }
+
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(plainPassword, salt, 10000, 64, 'sha512').toString('hex');
+  this.passwordHash = `${salt}:${hash}`;
+};
+
+/**
  * Compara una contraseña candidata en texto plano con el hash almacenado.
  *
  * @remarks

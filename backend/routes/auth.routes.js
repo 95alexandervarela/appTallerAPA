@@ -18,7 +18,7 @@ router.post('/login', async (req, res) => {
     const normalizedUsername = String(username || usuario || '').trim().toLowerCase();
 
     if (!normalizedUsername || !password) {
-      return res.status(400).json({ error: 'Usuario y contrasena son requeridos' });
+      return res.status(400).json({ error: 'Credenciales inválidas' });
     }
 
     const user = await Usuario.findOne({
@@ -26,8 +26,12 @@ router.post('/login', async (req, res) => {
       activo: true,
     });
 
-    if (!user || !user.comparePassword(password)) {
-      return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (!user.comparePassword(password)) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
     const safeUser = await buildSafeAuthUser(user);

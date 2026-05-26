@@ -184,7 +184,7 @@
             name="role"
             [options]="roleOptions"
             optionLabel="label"
-            optionValue="label"
+            optionValue="value"
             [(ngModel)]="createUserForm.role"
             placeholder="Seleccionar rol"
             appendTo="body"
@@ -370,7 +370,7 @@
             name="editRole"
             [options]="roleOptions"
             optionLabel="label"
-            optionValue="label"
+            optionValue="value"
             [(ngModel)]="editUserForm.role"
             placeholder="Seleccionar rol"
             appendTo="body"
@@ -395,7 +395,45 @@
             <small>Estado es requerido.</small>
           }
         </div>
+
+        <div class="form-field form-field-wide password-section">
+          <span>Cambiar contraseña (opcional)</span>
+        </div>
+
+        <label>
+          <span>Nueva contraseña</span>
+          <input
+            pInputText
+            type="password"
+            name="editNewPassword"
+            [(ngModel)]="editUserForm.newPassword"
+            autocomplete="new-password"
+          />
+          @if (editUserSubmitted && isEditPasswordIncomplete()) {
+            <small>Nueva contraseña es requerida.</small>
+          }
+        </label>
+
+        <label>
+          <span>Confirmar contraseña</span>
+          <input
+            pInputText
+            type="password"
+            name="editConfirmPassword"
+            [(ngModel)]="editUserForm.confirmPassword"
+            autocomplete="new-password"
+          />
+          @if (editUserSubmitted && isEditPasswordIncomplete()) {
+            <small>Confirma la nueva contraseña.</small>
+          } @else if (isEditPasswordMismatch()) {
+            <small>Las contraseñas no coinciden.</small>
+          }
+        </label>
       </div>
+
+      @if (editUserSuccessMessage) {
+        <p class="form-success">{{ editUserSuccessMessage }}</p>
+      }
 
       @if (editUserErrorMessage) {
         <p class="form-error">{{ editUserErrorMessage }}</p>

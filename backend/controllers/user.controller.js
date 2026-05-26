@@ -1,13 +1,56 @@
 const Usuario = require("../models/user.model");
 const Rol = require("../models/role.model");
+const { LEGACY_ROLE_FALLBACKS } = require("../services/authUser.service");
 
+const ADMIN_ROLE_CODE = "administrador";
 const MANAGER_ROLE_CODE = "manager";
 
 const getManagerRole = async () => Rol.findOne({ codigo: MANAGER_ROLE_CODE, activo: true });
 const isManagerRoleId = (role, roleId) => Boolean(role && String(role._id) === String(roleId));
 const isManagerUser = async (user) => {
   const managerRole = await getManagerRole();
-  return isManagerRoleId(managerRole, user?.rol_id);
+  return isManagerRoleId(managerRole, getUserRoleId(user));
+};
+const isAdminOrManager = (roleCode) =>
+  roleCode === ADMIN_ROLE_CODE || roleCode === MANAGER_ROLE_CODE;
+
+const getUserRoleId = (user) => {
+  const populatedRoleId = user?.$__?.populated?.rol_id?.value;
+
+  if (populatedRoleId) {
+    return String(populatedRoleId);
+  }
+
+  if (user?.rol_id?._id) {
+    return String(user.rol_id._id);
+  }
+
+  return user?.rol_id ? String(user.rol_id) : "";
+};
+
+const getUserRolePayload = (user) => {
+  const roleId = getUserRoleId(user);
+  const populatedRole = user?.rol_id?.codigo ? user.rol_id : null;
+  const fallbackRole = LEGACY_ROLE_FALLBACKS[roleId];
+
+  return {
+    roleId,
+    roleCode: populatedRole?.codigo || fallbackRole?.codigo || "desconocido",
+    roleName: populatedRole?.nombre || fallbackRole?.nombre || "Desconocido",
+  };
+};
+
+const buildUserResponse = (user) => {
+  const responseUser = user.toObject();
+  const role = getUserRolePayload(user);
+
+  delete responseUser.passwordHash;
+  responseUser.rol_id = role.roleId;
+  responseUser.roleId = role.roleId;
+  responseUser.roleCode = role.roleCode;
+  responseUser.roleName = role.roleName;
+
+  return responseUser;
 };
 
 /**
@@ -92,20 +135,17 @@ exports.createUser = async (req, res) => {
     const newUser = new Usuario({
       username,
       email,
-      passwordHash: rawPassword, // Se hasheará en el hook pre('save') del modelo
       nombre_completo,
       rol_id,
     });
+    newUser.setPassword(rawPassword);
 
     await newUser.save();
-
-    // Retornar el usuario sin la contraseña
-    const responseUser = newUser.toObject();
-    delete responseUser.passwordHash;
+    await newUser.populate("rol_id", "codigo nombre");
 
     res.status(201).json({
       message: "Usuario creado exitosamente",
-      user: responseUser,
+      user: buildUserResponse(newUser),
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -138,14 +178,14 @@ exports.createUser = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     // El middleware pre('find') del modelo filtra automáticamente fecha_eliminacion: null
-    const users = await Usuario.find({}, "-passwordHash");
+    const users = await Usuario.find({}, "-passwordHash").populate("rol_id", "codigo nombre");
     const managerRole = await getManagerRole();
     const visibleUsers =
       req.authUser?.roleCode === MANAGER_ROLE_CODE || !managerRole
         ? users
-        : users.filter((user) => !isManagerRoleId(managerRole, user.rol_id));
+        : users.filter((user) => !isManagerRoleId(managerRole, getUserRoleId(user)));
 
-    res.status(200).json(visibleUsers);
+    res.status(200).json(visibleUsers.map(buildUserResponse));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -166,7 +206,7 @@ exports.getUsers = async (req, res) => {
  */
 exports.getUserById = async (req, res) => {
   try {
-    const user = await Usuario.findById(req.params.id, "-passwordHash");
+    const user = await Usuario.findById(req.params.id, "-passwordHash").populate("rol_id", "codigo nombre");
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
@@ -176,7 +216,7 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    res.status(200).json(user);
+    res.status(200).json(buildUserResponse(user));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -188,8 +228,8 @@ exports.getUserById = async (req, res) => {
  * @remarks
  * Modifica selectivamente los campos proveídos en el cuerpo de la petición.
  * Realiza comprobaciones de duplicados si se intenta modificar el `username` o `email`.
- * Si se incluye una nueva contraseña (campo `password` o `passwordHash`), el pre-hook del
- * modelo se encarga de volver a computar el hash criptográfico.
+ * La contraseña se cambia exclusivamente mediante el endpoint dedicado de cambio
+ * de contraseña.
  *
  * @async
  * @function updateUser
@@ -202,8 +242,6 @@ exports.updateUser = async (req, res) => {
     const {
       username,
       email,
-      passwordHash,
-      password,
       nombre_completo,
       rol_id,
       activo,
@@ -259,20 +297,101 @@ exports.updateUser = async (req, res) => {
     if (rol_id !== undefined) user.rol_id = rol_id;
     if (activo !== undefined) user.activo = activo;
 
-    // Si se envía una nueva contraseña, actualizarla (el pre-hook save la hasheará)
-    const newPassword = password || passwordHash;
-    if (newPassword) {
-      user.passwordHash = newPassword;
-    }
-
     await user.save();
-
-    const responseUser = user.toObject();
-    delete responseUser.passwordHash;
+    await user.populate("rol_id", "codigo nombre");
 
     res.status(200).json({
       message: "Usuario actualizado exitosamente",
-      user: responseUser,
+      user: buildUserResponse(user),
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+/**
+ * Cambia la contraseña del usuario autenticado.
+ *
+ * @remarks
+ * Requiere validar la contraseña actual y se expone solo para Administrador y Manager.
+ *
+ * @async
+ * @function changePassword
+ * @param {import('express').Request} req - Petición HTTP con `currentPassword` y `newPassword`.
+ * @param {import('express').Response} res - Respuesta HTTP.
+ * @returns {Promise<void>} Envía código 200 si el cambio fue aplicado.
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Contraseña actual y nueva contraseña son requeridas" });
+    }
+
+    const user = req.authUserDocument;
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (!user.comparePassword(currentPassword)) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    user.setPassword(newPassword);
+    await user.save();
+
+    res.status(200).json({
+      message: "Contraseña actualizada exitosamente",
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+/**
+ * Cambia la contraseña de un usuario indicado por ID.
+ *
+ * @remarks
+ * Administrador y Manager pueden restablecer contraseñas desde gestión de usuarios.
+ * Si se recibe `currentPassword`, se valida contra el usuario destino antes de aplicar el cambio.
+ *
+ * @async
+ * @function changeUserPassword
+ * @param {import('express').Request} req - Petición HTTP con `newPassword` y opcionalmente `currentPassword`.
+ * @param {import('express').Response} res - Respuesta HTTP.
+ * @returns {Promise<void>} Envía código 200 si el cambio fue aplicado.
+ */
+exports.changeUserPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.params.id;
+    const canManagePasswords = isAdminOrManager(req.authUser?.roleCode);
+
+    if (req.authUser?.id !== userId && !canManagePasswords) {
+      return res.status(403).json({ error: "No tienes permisos para cambiar esta contraseña" });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ error: "La nueva contraseña es requerida" });
+    }
+
+    const user = await Usuario.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if ((!canManagePasswords || currentPassword) && !user.comparePassword(currentPassword)) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    user.setPassword(newPassword);
+    await user.save();
+
+    res.status(200).json({
+      message: "Contraseña actualizada correctamente",
     });
   } catch (error) {
     res.status(400).json({ error: error.message });

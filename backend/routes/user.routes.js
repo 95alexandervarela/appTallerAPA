@@ -4,6 +4,7 @@ const userController = require('../controllers/user.controller');
 const { requireAuthContext, requireRole } = require('../middleware/authContext.middleware');
 
 const requireAdminUser = [requireAuthContext, requireRole(['administrador'])];
+const requirePasswordChangeUser = [requireAuthContext, requireRole(['administrador', 'manager'])];
 
 /**
  * Enrutador de Express para el recurso de Usuarios.
@@ -28,6 +29,18 @@ router.post('/', requireAdminUser, userController.createUser);
  * @description Recupera la lista de todos los usuarios activos (no eliminados lógicamente).
  */
 router.get('/', requireAdminUser, userController.getUsers);
+
+/**
+ * @name POST /change-password
+ * @description Cambia la contraseña del usuario autenticado tras validar la contraseña actual.
+ */
+router.post('/change-password', requirePasswordChangeUser, userController.changePassword);
+
+/**
+ * @name PATCH /:id/change-password
+ * @description Cambia la contraseña de un usuario desde gestión administrativa.
+ */
+router.patch('/:id/change-password', requirePasswordChangeUser, userController.changeUserPassword);
 
 /**
  * @name GET /:id
