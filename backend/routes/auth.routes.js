@@ -1,6 +1,7 @@
 const express = require('express');
 const Usuario = require('../models/user.model');
 const { buildSafeAuthUser } = require('../services/authUser.service');
+const { signAuthToken } = require('../services/jwt.service');
 
 const router = express.Router();
 
@@ -9,8 +10,7 @@ const router = express.Router();
  *
  * @remarks
  * Valida usuario y contrasena contra MongoDB usando el hash PBKDF2 del modelo
- * `Usuario`. En esta primera fase no emite JWT; devuelve usuario minimo y deja
- * documentado `sessionMode` como sesion temporal del frontend.
+ * `Usuario`. Devuelve un JWT firmado sin exponer `passwordHash`.
  */
 router.post('/login', async (req, res) => {
   try {
@@ -31,12 +31,13 @@ router.post('/login', async (req, res) => {
     }
 
     const safeUser = await buildSafeAuthUser(user);
+    const token = signAuthToken(safeUser);
 
     res.status(200).json({
       message: 'Inicio de sesion exitoso',
       user: safeUser,
-      token: null,
-      sessionMode: 'temporary-session-storage',
+      token,
+      sessionMode: 'jwt',
     });
   } catch (error) {
     res.status(500).json({ error: 'No se pudo iniciar sesion' });

@@ -1,12 +1,13 @@
 const Usuario = require('../models/user.model');
 const { buildSafeAuthUser } = require('../services/authUser.service');
+const { verifyAuthToken } = require('../services/jwt.service');
 
 /**
- * Carga el usuario autenticado desde la cabecera temporal `x-user-id`.
+ * Carga el usuario autenticado desde JWT o desde la cabecera temporal `x-user-id`.
  *
  * @remarks
- * Es un puente controlado hasta implementar JWT. Valida que el usuario exista,
- * este activo y resuelve su rol real antes de permitir operaciones protegidas.
+ * JWT es la via principal. `x-user-id` queda como fallback temporal para no
+ * romper el frontend mientras se migra a Authorization: Bearer.
  *
  * @param {import('express').Request} req - Peticion entrante.
  * @param {import('express').Response} res - Respuesta HTTP.
@@ -15,7 +16,17 @@ const { buildSafeAuthUser } = require('../services/authUser.service');
  */
 const requireAuthContext = async (req, res, next) => {
   try {
-    const userId = req.get('x-user-id');
+    const authorization = req.get('authorization') || '';
+    const bearerPrefix = 'Bearer ';
+    let userId = req.get('x-user-id');
+    let sessionMode = 'legacy-x-user-id';
+
+    if (authorization.startsWith(bearerPrefix)) {
+      const token = authorization.slice(bearerPrefix.length).trim();
+      const decoded = verifyAuthToken(token);
+      userId = decoded.sub;
+      sessionMode = 'jwt';
+    }
 
     if (!userId) {
       return res.status(401).json({ error: 'Sesion requerida' });
@@ -28,6 +39,7 @@ const requireAuthContext = async (req, res, next) => {
     }
 
     req.authUser = await buildSafeAuthUser(user);
+    req.authUser.sessionMode = sessionMode;
     req.authUserDocument = user;
 
     next();
