@@ -267,14 +267,37 @@ La sesion se guarda temporalmente en `sessionStorage` con datos minimos del usua
 
 > Pendiente tecnico: migrar esta sesion a JWT real con expiracion, firma, refresh token y validacion completa en middleware.
 
-### Interceptor temporal
+### JWT - Autenticacion Real (Implementado)
 
-Mientras no exista JWT, el frontend adjunta:
+El sistema utiliza **JWT (JSON Web Tokens)** como mecanismo principal de autenticacion.
 
-```text
-x-user-id
-x-user-role
-```
+#### Flujo JWT
+
+1. **Login**: Usuario envia credenciales a `POST /api/auth/login`
+2. **Validacion Backend**: Contraseña comparada contra hash PBKDF2 en MongoDB
+3. **Token Generado**: Backend retorna JWT firmado con `JWT_SECRET`
+4. **Almacenamiento Frontend**: Token guardado en `sessionStorage` (no en localStorage por seguridad)
+5. **Adjuncion Automatica**: Interceptor agrega `Authorization: Bearer <token>` a todas las llamadas `/api/*`
+6. **Validacion Backend**: Middleware verifica JWT en cada request
+
+#### Estructura del JWT
+
+Payload incluye:
+- `sub`: ID del usuario (para recuperar datos de BD si es necesario)
+- `username`: Nombre de usuario
+- `roleCode`: Codigo de rol (administrador, manager, tecnico, recepcion)
+- `roleId`: ID del rol en MongoDB
+
+Expiracion: 8 horas (configurable en `JWT_EXPIRES_IN`)
+
+#### Seguridad
+
+- **passwordHash nunca viaja**: Backend excluye campo `-passwordHash` en todas las respuestas
+- **x-user-id fallback temporal**: Se mantiene para compatibilidad mientras se estabiliza JWT
+- **401 limpia sesion**: Si token es inválido o expirado, frontend limpia sessionStorage y redirige a `/login`
+- **No refresh token**: Por ahora, sesion expira en 8 horas. Implementar refresh token es trabajo futuro.
+
+### Interceptor Autenticacion
 
 Archivo:
 
@@ -282,22 +305,70 @@ Archivo:
 frontend/src/app/core/interceptors/auth-session.interceptor.ts
 ```
 
-El backend valida el usuario recibido y resuelve su rol antes de permitir recursos protegidos. Este mecanismo es temporal y no reemplaza JWT.
+Responsabilidades:
+- Agrega `Authorization: Bearer <token>` SOLO a requests `/api/*`
+- No altera llamadas a assets, imágenes o URLs externas
+- Captura errores 401 y limpia sesion + redirige a `/login`
 
-### Control de acceso
+### Control de Acceso - Roles y Permisos
 
-Guards creados:
+#### Roles Soportados
 
-```text
-frontend/src/app/core/guards/auth.guard.ts
-frontend/src/app/core/guards/role.guard.ts
-```
+- **manager**: Acceso administrativo completo. Puede ver todos los usuarios (incluyendo usuario APA).
+- **administrador**: Gestiona usuarios (excepto manager/APA). Acceso a `/config`.
+- **tecnico**: Solo ve sus tickets asignados. Sin acceso a gestion de usuarios.
+- **recepcion**: (Futuro) Sin acceso a /config.
 
-Reglas actuales:
+#### Protecciones Backend
 
-- `/home`, `/tickets`, `/recepcion-equipo`: requieren sesion.
-- `/config`: requiere sesion y rol `administrador`.
-- Si un Tecnico intenta entrar manualmente a `/config`, se redirige a `/home`.
+**User Controller** (`backend/controllers/user.controller.js`):
+- `POST /` (crear): Solo administrador (manager bypass automático)
+- `GET /`: Filtra usuarios manager para no-managers
+- `GET /:id`: Retorna 404 si es manager y requester no es manager
+- `PUT /:id`: Bloquea modificacion de manager para no-managers
+- `DELETE /:id`: Bloquea eliminacion logica de manager para no-managers
+
+**Ticket Controller** (`backend/routes/ticket.routes.js`):
+- `GET /`: Tecnico solo ve sus tickets asignados (filtro `tecnicoAsignado`)
+- `GET /:id`: Tecnico no puede ver tickets de otros tecnicos
+- `PUT /:id`: Tecnico solo puede cambiar estados permitidos (matriz `TECHNICIAN_STATUS_UPDATES`)
+
+#### Protecciones Frontend
+
+**Guards** (`frontend/src/app/core/guards/`):
+- `authGuard`: Valida que exista token + usuario en sesion
+- `roleGuard`: Valida roles permitidos segun `route.data.allowedRoles`
+
+**Rutas Protegidas**:
+- `/home`, `/tickets`, `/recepcion-equipo`: Requieren `authGuard`
+- `/config`: Requiere `authGuard` + `roleGuard` con rol `administrador` (manager bypass automático)
+
+**Sidebar Dinamico** (`frontend/src/app/layout/sidebar.component.ts`):
+- Tecnico: Oculta "Recepcion de equipo", "Reportes", "Configuracion"
+- Otros roles: Ven menu completo
+
+#### Manager como Superusuario
+
+- Puede crear usuarios manager
+- Solo manager puede editar otro manager
+- Solo manager puede ver lista completa de usuarios
+- Acceso a `/config` garantizado (roleGuard incluye manager en administrador)
+
+#### Administrador (SIN acceso a APA/manager)
+
+- No ve usuario APA/manager en listados
+- No puede obtener detalles de usuario APA/manager
+- No puede editar usuario APA/manager
+- No puede eliminar usuario APA/manager
+- Acceso a `/config` para gestionar usuarios normales
+
+#### Tecnico (SIN acceso a usuarios)
+
+- No puede acceder a `/api/users`
+- No ve `/config` en sidebar
+- Si accede manualmente a `/config`, redirige a `/home`
+- Solo ve tickets asignados a él
+- Solo puede cambiar estado de sus propios tickets (estados permitidos)
 
 ### Permisos por rol
 
