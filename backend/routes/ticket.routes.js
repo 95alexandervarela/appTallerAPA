@@ -5,6 +5,7 @@ const RecepcionEquipo = require('../models/recepcionEquipo.model');
 const Usuario = require('../models/user.model');
 const Rol = require('../models/role.model');
 const { requireAuthContext, requireRole } = require('../middleware/authContext.middleware');
+const { TicketStateAction, applyTicketState } = require('../services/ticketState.service');
 
 const LEGACY_TECNICO_ROLE_ID = '6a126c9296a6e0cb6e9df8a4';
 const TECHNICIAN_STATUS_UPDATES = new Set([
@@ -203,7 +204,6 @@ router.put('/:id', requireAuthContext, async (req, res) => {
     const camposEditables = [
       'tecnicoAsignado',
       'prioridad',
-      'estadoTicket',
       'diagnosticoInicial',
       'observacionesAsignacion',
       'fechaInicioDiagnostico',
@@ -218,6 +218,14 @@ router.put('/:id', requireAuthContext, async (req, res) => {
     });
 
     await ticket.save();
+
+    if (req.body.estadoTicket !== undefined) {
+      await applyTicketState(ticket._id, TicketStateAction.MANUAL_STATUS_UPDATE, {
+        estadoTicket: req.body.estadoTicket,
+        changedBy: req.authUser.id,
+        comment: 'Estado actualizado desde PUT /api/tickets/:id'
+      });
+    }
 
     const ticketActualizado = await populateTicket(Ticket.findById(ticket._id));
 
@@ -258,9 +266,11 @@ router.patch('/:id/status', requireAuthContext, async (req, res) => {
       return res.status(403).json({ error: 'No puedes cambiar tickets de otro tecnico' });
     }
 
-    ticket.estadoTicket = estadoTicket;
-
-    await ticket.save();
+    await applyTicketState(ticket._id, TicketStateAction.MANUAL_STATUS_UPDATE, {
+      estadoTicket,
+      changedBy: req.authUser.id,
+      comment: 'Estado actualizado desde PATCH /api/tickets/:id/status'
+    });
 
     const ticketActualizado = await populateTicket(Ticket.findById(ticket._id));
 
@@ -303,12 +313,19 @@ router.put(
       return res.status(404).json({ error: 'Tecnico no encontrado o no activo' });
     }
 
+    const shouldMarkAssigned = ticket.estadoTicket === 'creado';
     ticket.tecnicoAsignado = tecnico._id;
-    ticket.estadoTicket = ticket.estadoTicket === 'creado' ? 'asignado' : ticket.estadoTicket;
     ticket.observacionesAsignacion = observacionesAsignacion || ticket.observacionesAsignacion;
     ticket.fechaAsignacion = Date.now();
 
     await ticket.save();
+
+    if (shouldMarkAssigned) {
+      await applyTicketState(ticket._id, TicketStateAction.TECNICO_ASIGNADO, {
+        changedBy: req.authUser.id,
+        comment: 'Tecnico asignado al ticket'
+      });
+    }
 
     const ticketActualizado = await Ticket.findById(ticket._id)
       .populate('recepcionEquipoId')

@@ -2,9 +2,14 @@ const GestionRepuesto = require('../models/gestionRepuesto.model');
 const createCrudRouter = require('./createCrudRouter');
 const { TicketStateAction, applyTicketState } = require('../services/ticketState.service');
 
-async function updateTicketFromRepuesto(document) {
+async function updateTicketFromRepuesto(document, req) {
+  const options = {
+    changedBy: req.authUser?.id,
+    comment: 'Estado actualizado por gestion de repuesto'
+  };
+
   if (document.entregadoTecnico || document.estadoRepuesto === 'entregado_tecnico') {
-    await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_ENTREGADO_TECNICO);
+    await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_ENTREGADO_TECNICO, options);
     return;
   }
 
@@ -14,11 +19,11 @@ async function updateTicketFromRepuesto(document) {
     || document.disponibleApa
     || document.cantidadRecibida >= document.cantidad
   ) {
-    await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_RECIBIDO);
+    await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_RECIBIDO, options);
     return;
   }
 
-  await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_SOLICITADO);
+  await applyTicketState(document.ticketId, TicketStateAction.REPUESTO_SOLICITADO, options);
 }
 
 module.exports = createCrudRouter(GestionRepuesto, {

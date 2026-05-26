@@ -122,13 +122,16 @@ const ticketSchema = new mongoose.Schema({
     trim: true
   },
   fechaAsignacion: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaInicioDiagnostico: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCierre: {
-    type: Date
+    type: Date,
+    default: null
   },
   activo: {
     type: Boolean,
@@ -154,9 +157,6 @@ ticketSchema.pre('save', function () {
     this.fechaAsignacion = Date.now();
   }
 
-  if (this.tecnicoAsignado && this.estadoTicket === 'creado') {
-    this.estadoTicket = 'asignado';
-  }
 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
