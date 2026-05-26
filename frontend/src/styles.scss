@@ -340,3 +340,74 @@ select.status-native-select option {
 .ticket-comment-form button {
   justify-self: end;
 }
+
+body .ticket-detail-dialog.ticket-detail-dialog--layout {
+  width: min(980px, calc(100vw - 32px));
+}
+
+body .ticket-detail-dialog.ticket-detail-dialog--layout .p-dialog-content {
+  max-height: calc(100vh - 132px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal-layout {
+  display: flex;
+  height: min(720px, calc(100vh - 132px));
+  min-height: 0;
+}
+
+.modal-sidebar {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  width: 220px;
+  height: 100%;
+  padding: 18px;
+  border-right: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.modal-content {
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.modal-sidebar .ticket-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.modal-sidebar .quick-action-button {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 44px;
+}
+
+@media (max-width: 940px) {
+  .modal-layout {
+    flex-direction: column;
+  }
+
+  .modal-sidebar {
+    position: static;
+    width: auto;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  }
+
+  .modal-sidebar .ticket-detail-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .modal-sidebar .quick-action-button {
+    width: auto;
+  }
+}

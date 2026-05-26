@@ -342,7 +342,7 @@
 
   <p-dialog
     header="Detalle del ticket"
-    styleClass="ticket-detail-dialog"
+    styleClass="ticket-detail-dialog ticket-detail-dialog--layout"
     maskStyleClass="ticket-dialog-mask"
     [(visible)]="isTicketDetailDialogOpen"
     [modal]="true"
@@ -351,171 +351,177 @@
     (onHide)="closeTicketDetail()"
   >
     @if (selectedTicket) {
-      <div class="ticket-detail-content">
-        <div>
-          <span>Numero de caso</span>
-          <strong>{{ selectedTicket.numeroCaso }}</strong>
-        </div>
-        <div>
-          <span>Cliente</span>
-          <strong>{{ selectedTicket.cliente }}</strong>
-        </div>
-        <div>
-          <span>Telefono</span>
-          <strong>{{ selectedTicket.telefonoCliente || 'Sin telefono' }}</strong>
-        </div>
-        <div>
-          <span>Equipo</span>
-          <strong>{{ selectedTicket.equipo }}</strong>
-        </div>
-        <div>
-          <span>Marca / modelo</span>
-          <strong
-            >{{ selectedTicket.marcaEquipo || 'Sin marca' }}
-            {{ selectedTicket.modeloEquipo }}</strong
-          >
-        </div>
-        <div>
-          <span>Serie</span>
-          <strong>{{ selectedTicket.serieEquipo || 'Sin serie' }}</strong>
-        </div>
-        <div class="detail-wide">
-          <span>Falla reportada</span>
-          <strong>{{ selectedTicket.fallaReportada || 'Sin detalle' }}</strong>
-        </div>
-        <div class="detail-wide">
-          <span>Condicion fisica</span>
-          <strong>{{ selectedTicket.condicionFisica || 'Sin detalle' }}</strong>
-        </div>
-        <div class="detail-wide">
-          <span>Accesorios</span>
-          <strong>
-            {{
-              selectedTicket.accesoriosEntregados.length
-                ? selectedTicket.accesoriosEntregados.join(', ')
-                : 'Sin accesorios'
-            }}
-          </strong>
-        </div>
-        <div>
-          <span>Estado</span>
-          @if (canUpdateTicketStatus()) {
-            <select
-              name="selectedStatusCode"
-              [ngModel]="selectedStatusCode"
-              (ngModelChange)="updateSelectedTicketStatus($event)"
-              [disabled]="isUpdatingStatus"
-              [class]="selectedTicket.estadoClassName + ' status-native-select'"
-              aria-label="Estado del ticket"
+      <div class="modal-layout">
+        <div class="modal-sidebar">
+          <footer class="ticket-detail-actions">
+            @if (canAssignTechnician()) {
+              <button
+                pButton
+                type="button"
+                class="quick-action-button"
+                (click)="openAssignTechnicianDialog()"
+              >
+                <i class="pi pi-user-plus" aria-hidden="true"></i>
+                <span pButtonLabel>Asignar tecnico</span>
+              </button>
+            }
+            @if (canRegisterDiagnostico()) {
+              <button pButton type="button" class="quick-action-button" (click)="openDiagnosticoDialog()">
+                <i class="pi pi-wrench" aria-hidden="true"></i>
+                <span pButtonLabel>Registrar diagnostico</span>
+              </button>
+            }
+            @if (canValidateGarantia()) {
+              <button pButton type="button" class="quick-action-button" (click)="openGarantiaDialog()">
+                <i class="pi pi-shield" aria-hidden="true"></i>
+                <span pButtonLabel>Validar garantia</span>
+              </button>
+            }
+            <button
+              pButton
+              type="button"
+              class="quick-action-button"
+              [disabled]="!canManageRepuestos()"
+              (click)="openRepuestosDialog()"
             >
-              @for (status of statusOptionsForCurrentUser; track status.value) {
-                <option [ngValue]="status.value">{{ status.label }}</option>
+              <i class="pi pi-box" aria-hidden="true"></i>
+              <span pButtonLabel>Repuestos</span>
+            </button>
+          </footer>
+        </div>
+
+        <div class="modal-content">
+          <div class="ticket-detail-content">
+            <div>
+              <span>Numero de caso</span>
+              <strong>{{ selectedTicket.numeroCaso }}</strong>
+            </div>
+            <div>
+              <span>Cliente</span>
+              <strong>{{ selectedTicket.cliente }}</strong>
+            </div>
+            <div>
+              <span>Telefono</span>
+              <strong>{{ selectedTicket.telefonoCliente || 'Sin telefono' }}</strong>
+            </div>
+            <div>
+              <span>Equipo</span>
+              <strong>{{ selectedTicket.equipo }}</strong>
+            </div>
+            <div>
+              <span>Marca / modelo</span>
+              <strong
+                >{{ selectedTicket.marcaEquipo || 'Sin marca' }}
+                {{ selectedTicket.modeloEquipo }}</strong
+              >
+            </div>
+            <div>
+              <span>Serie</span>
+              <strong>{{ selectedTicket.serieEquipo || 'Sin serie' }}</strong>
+            </div>
+            <div class="detail-wide">
+              <span>Falla reportada</span>
+              <strong>{{ selectedTicket.fallaReportada || 'Sin detalle' }}</strong>
+            </div>
+            <div class="detail-wide">
+              <span>Condicion fisica</span>
+              <strong>{{ selectedTicket.condicionFisica || 'Sin detalle' }}</strong>
+            </div>
+            <div class="detail-wide">
+              <span>Accesorios</span>
+              <strong>
+                {{
+                  selectedTicket.accesoriosEntregados.length
+                    ? selectedTicket.accesoriosEntregados.join(', ')
+                    : 'Sin accesorios'
+                }}
+              </strong>
+            </div>
+            <div>
+              <span>Estado</span>
+              @if (canUpdateTicketStatus()) {
+                <select
+                  name="selectedStatusCode"
+                  [ngModel]="selectedStatusCode"
+                  (ngModelChange)="updateSelectedTicketStatus($event)"
+                  [disabled]="isUpdatingStatus"
+                  [class]="selectedTicket.estadoClassName + ' status-native-select'"
+                  aria-label="Estado del ticket"
+                >
+                  @for (status of statusOptionsForCurrentUser; track status.value) {
+                    <option [ngValue]="status.value">{{ status.label }}</option>
+                  }
+                </select>
+
+                @if (statusUpdateMessage) {
+                  <small class="status-inline-message">{{ statusUpdateMessage }}</small>
+                }
+
+                @if (statusUpdateErrorMessage) {
+                  <small class="status-inline-error">{{ statusUpdateErrorMessage }}</small>
+                }
+              } @else {
+                <span [class]="selectedTicket.estadoClassName">{{ selectedTicket.estado }}</span>
               }
-            </select>
+            </div>
+            <div>
+              <span>Prioridad</span>
+              <strong>{{ selectedTicket.prioridad }}</strong>
+            </div>
+            <div style="margin-top: 12px">
+              <span>Tecnico asignado</span>
+              <strong>{{ selectedTicket.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
+            </div>
+          </div>
 
-            @if (statusUpdateMessage) {
-              <small class="status-inline-message">{{ statusUpdateMessage }}</small>
-            }
+          <section class="ticket-comments-section">
+            <header class="ticket-comments-title">
+              <h3>💬 Comentarios del ticket</h3>
+            </header>
 
-            @if (statusUpdateErrorMessage) {
-              <small class="status-inline-error">{{ statusUpdateErrorMessage }}</small>
-            }
-          } @else {
-            <span [class]="selectedTicket.estadoClassName">{{ selectedTicket.estado }}</span>
-          }
-        </div>
-        <div>
-          <span>Prioridad</span>
-          <strong>{{ selectedTicket.prioridad }}</strong>
-        </div>
-        <div style="margin-top: 12px">
-          <span>Tecnico asignado</span>
-          <strong>{{ selectedTicket.tecnicoAsignadoNombre || 'Sin asignar' }}</strong>
+            <div class="ticket-comments-list" #ticketCommentsList>
+              @if (isLoadingTicketComments) {
+                <p class="ticket-comments-empty">Cargando comentarios...</p>
+              } @else if (ticketComments.length) {
+                @for (comment of ticketComments; track comment._id) {
+                  <article class="ticket-comment-item">
+                    <strong>{{ getCommentAuthor(comment) }}</strong>
+                    <p>{{ comment.message }}</p>
+                    <time>{{ formatCommentDate(comment.createdAt) }}</time>
+                  </article>
+                }
+              } @else {
+                <p class="ticket-comments-empty">No hay comentarios en este ticket</p>
+              }
+            </div>
+
+            <div class="ticket-comment-form">
+              <textarea
+                name="newTicketComment"
+                [(ngModel)]="newTicketComment"
+                [disabled]="isSendingTicketComment"
+                placeholder="Escribir comentario..."
+              ></textarea>
+
+              @if (ticketCommentErrorMessage) {
+                <p class="form-error">{{ ticketCommentErrorMessage }}</p>
+              }
+
+              <button
+                pButton
+                type="button"
+                class="quick-action-button"
+                [loading]="isSendingTicketComment"
+                [disabled]="isSendingTicketComment || !newTicketComment.trim()"
+                (click)="sendTicketComment()"
+              >
+                <i class="pi pi-send" aria-hidden="true"></i>
+                <span pButtonLabel>Enviar</span>
+              </button>
+            </div>
+          </section>
         </div>
       </div>
-
-      <footer class="ticket-detail-actions">
-        @if (canAssignTechnician()) {
-          <button
-            pButton
-            type="button"
-            class="quick-action-button"
-            (click)="openAssignTechnicianDialog()"
-          >
-            <i class="pi pi-user-plus" aria-hidden="true"></i>
-            <span pButtonLabel>Asignar tecnico</span>
-          </button>
-        }
-        @if (canRegisterDiagnostico()) {
-          <button pButton type="button" class="quick-action-button" (click)="openDiagnosticoDialog()">
-            <i class="pi pi-wrench" aria-hidden="true"></i>
-            <span pButtonLabel>Registrar diagnostico</span>
-          </button>
-        }
-        @if (canValidateGarantia()) {
-          <button pButton type="button" class="quick-action-button" (click)="openGarantiaDialog()">
-            <i class="pi pi-shield" aria-hidden="true"></i>
-            <span pButtonLabel>Validar garantia</span>
-          </button>
-        }
-        <button
-          pButton
-          type="button"
-          class="quick-action-button"
-          [disabled]="!canManageRepuestos()"
-          (click)="openRepuestosDialog()"
-        >
-          <i class="pi pi-box" aria-hidden="true"></i>
-          <span pButtonLabel>Repuestos</span>
-        </button>
-      </footer>
-
-      <section class="ticket-comments-section">
-        <header class="ticket-comments-title">
-          <h3>💬 Comentarios del ticket</h3>
-        </header>
-
-        <div class="ticket-comments-list" #ticketCommentsList>
-          @if (isLoadingTicketComments) {
-            <p class="ticket-comments-empty">Cargando comentarios...</p>
-          } @else if (ticketComments.length) {
-            @for (comment of ticketComments; track comment._id) {
-              <article class="ticket-comment-item">
-                <strong>{{ getCommentAuthor(comment) }}</strong>
-                <p>{{ comment.message }}</p>
-                <time>{{ formatCommentDate(comment.createdAt) }}</time>
-              </article>
-            }
-          } @else {
-            <p class="ticket-comments-empty">No hay comentarios en este ticket</p>
-          }
-        </div>
-
-        <div class="ticket-comment-form">
-          <textarea
-            name="newTicketComment"
-            [(ngModel)]="newTicketComment"
-            [disabled]="isSendingTicketComment"
-            placeholder="Escribir comentario..."
-          ></textarea>
-
-          @if (ticketCommentErrorMessage) {
-            <p class="form-error">{{ ticketCommentErrorMessage }}</p>
-          }
-
-          <button
-            pButton
-            type="button"
-            class="quick-action-button"
-            [loading]="isSendingTicketComment"
-            [disabled]="isSendingTicketComment || !newTicketComment.trim()"
-            (click)="sendTicketComment()"
-          >
-            <i class="pi pi-send" aria-hidden="true"></i>
-            <span pButtonLabel>Enviar</span>
-          </button>
-        </div>
-      </section>
     }
   </p-dialog>
 
