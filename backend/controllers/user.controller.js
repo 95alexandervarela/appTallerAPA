@@ -1,4 +1,14 @@
 const Usuario = require("../models/user.model");
+const Rol = require("../models/role.model");
+
+const MANAGER_ROLE_CODE = "manager";
+
+const getManagerRole = async () => Rol.findOne({ codigo: MANAGER_ROLE_CODE, activo: true });
+const isManagerRoleId = (role, roleId) => Boolean(role && String(role._id) === String(roleId));
+const isManagerUser = async (user) => {
+  const managerRole = await getManagerRole();
+  return isManagerRoleId(managerRole, user?.rol_id);
+};
 
 /**
  * Crea un nuevo usuario en el sistema.
@@ -41,6 +51,12 @@ exports.createUser = async (req, res) => {
 
     if (!rol_id || !rol_id.trim()) {
       return res.status(400).json({ error: "El rol es requerido" });
+    }
+
+    const managerRole = await getManagerRole();
+
+    if (isManagerRoleId(managerRole, rol_id) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
+      return res.status(403).json({ error: "No tienes permisos para crear usuarios Manager" });
     }
 
     const duplicateQuery = {
@@ -123,7 +139,13 @@ exports.getUsers = async (req, res) => {
   try {
     // El middleware pre('find') del modelo filtra automáticamente fecha_eliminacion: null
     const users = await Usuario.find({}, "-passwordHash");
-    res.status(200).json(users);
+    const managerRole = await getManagerRole();
+    const visibleUsers =
+      req.authUser?.roleCode === MANAGER_ROLE_CODE || !managerRole
+        ? users
+        : users.filter((user) => !isManagerRoleId(managerRole, user.rol_id));
+
+    res.status(200).json(visibleUsers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -147,6 +169,10 @@ exports.getUserById = async (req, res) => {
     const user = await Usuario.findById(req.params.id, "-passwordHash");
 
     if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
@@ -187,6 +213,20 @@ exports.updateUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
+      return res.status(403).json({ error: "No tienes permisos para modificar este usuario" });
+    }
+
+    const managerRole = await getManagerRole();
+
+    if (
+      rol_id !== undefined
+      && isManagerRoleId(managerRole, rol_id)
+      && req.authUser?.roleCode !== MANAGER_ROLE_CODE
+    ) {
+      return res.status(403).json({ error: "No tienes permisos para asignar rol Manager" });
     }
 
     // Validar duplicados si se va a actualizar username o email
@@ -258,6 +298,10 @@ exports.deleteUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
+      return res.status(403).json({ error: "No tienes permisos para eliminar este usuario" });
     }
 
     user.activo = false;

@@ -1,28 +1,39 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Adjunta el usuario autenticado a llamadas API mientras no exista JWT.
+ * Adjunta Authorization Bearer a llamadas API usando el JWT de AuthService.
  *
  * @remarks
- * Es un mecanismo temporal: backend valida el usuario recibido y su rol antes
- * de filtrar tickets o permitir gestion de usuarios. Debe migrarse a JWT real.
+ * El backend conserva `x-user-id` como fallback temporal, pero el frontend usa
+ * JWT como flujo principal. Ante 401 limpia sesion y vuelve a `/login`.
  */
 export const authSessionInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const currentUser = authService.getCurrentUser();
+  const router = inject(Router);
+  const token = authService.getToken();
+  const isApiRequest = req.url.startsWith('/api') || req.url.includes('localhost:3080/api');
 
-  if (!currentUser || req.url.includes('/api/auth/login')) {
-    return next(req);
-  }
+  const authReq =
+    token && isApiRequest && !req.url.includes('/api/auth/login')
+      ? req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      : req;
 
-  return next(
-    req.clone({
-      setHeaders: {
-        'x-user-id': currentUser.id,
-        'x-user-role': currentUser.roleCode,
-      },
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && isApiRequest && !req.url.includes('/api/auth/login')) {
+        authService.logout();
+        router.navigateByUrl('/login');
+      }
+
+      return throwError(() => error);
     }),
   );
 };

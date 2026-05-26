@@ -15,6 +15,11 @@ const baseRoles = [
     codigo: 'administrador',
     nombre: 'Administrador',
     permisos: ['usuarios:gestionar', 'roles:gestionar', 'ordenes:gestionar']
+  },
+  {
+    codigo: 'manager',
+    nombre: 'Manager',
+    permisos: ['usuarios:gestionar', 'roles:gestionar', 'ordenes:gestionar', 'sistema:superusuario']
   }
 ];
 

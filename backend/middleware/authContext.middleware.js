@@ -55,7 +55,10 @@ const requireAuthContext = async (req, res, next) => {
  * @returns {import('express').RequestHandler} Middleware de autorizacion.
  */
 const requireRole = (allowedRoleCodes) => (req, res, next) => {
-  if (!req.authUser || !allowedRoleCodes.includes(req.authUser.roleCode)) {
+  const managerCanUseAdminRoute =
+    req.authUser?.roleCode === 'manager' && allowedRoleCodes.includes('administrador');
+
+  if (!req.authUser || (!allowedRoleCodes.includes(req.authUser.roleCode) && !managerCanUseAdminRoute)) {
     return res.status(403).json({ error: 'No tienes permisos para acceder a este recurso' });
   }
 

@@ -6,7 +6,7 @@ import { AuthService } from '../services/auth.service';
  * Protege rutas internas que requieren una sesion autenticada.
  *
  * @remarks
- * Si no hay usuario en la sesion temporal, redirige a `/login` sin tocar el
+ * Si no hay usuario/token JWT en la sesion, redirige a `/login` sin tocar el
  * layout ni los componentes visuales existentes.
  */
 export const authGuard: CanActivateFn = () => {

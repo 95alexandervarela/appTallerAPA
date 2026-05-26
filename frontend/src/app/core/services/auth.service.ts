@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 
-export type AuthRoleCode = 'administrador' | 'tecnico' | 'recepcion' | 'supervisor' | 'desconocido';
+export type AuthRoleCode =
+  | 'administrador'
+  | 'manager'
+  | 'tecnico'
+  | 'recepcion'
+  | 'supervisor'
+  | 'desconocido';
 
 export interface AuthUser {
   id: string;
@@ -33,9 +39,8 @@ const AUTH_SESSION_KEY = 'helpDeskTallerAPA.authSession';
  * Servicio centralizado de autenticacion del frontend.
  *
  * @remarks
- * Conecta el login con `/api/auth/login`, guarda solo datos minimos del usuario
- * en `sessionStorage` y expone helpers de rol para evitar duplicar permisos en
- * componentes. No guarda contrasenas.
+ * Conecta el login con `/api/auth/login`, guarda el token JWT entregado por
+ * backend y centraliza la sesion en `sessionStorage`. No guarda contrasenas.
  */
 @Injectable({
   providedIn: 'root',
@@ -51,7 +56,7 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Valida credenciales contra backend y abre una sesion temporal controlada.
+   * Valida credenciales contra backend y abre una sesion JWT controlada.
    *
    * @param username Usuario escrito en el login.
    * @param password Contrasena escrita en el login.
@@ -71,7 +76,7 @@ export class AuthService {
   }
 
   /**
-   * Cierra la sesion local temporal.
+   * Cierra la sesion local JWT.
    */
   logout(): void {
     sessionStorage.removeItem(AUTH_SESSION_KEY);
@@ -86,20 +91,40 @@ export class AuthService {
     return this.currentUserSubject.value?.id ?? '';
   }
 
+  getToken(): string {
+    return this.readStoredSession()?.token ?? '';
+  }
+
   getCurrentRole(): AuthRoleCode {
     return this.currentUserSubject.value?.roleCode ?? 'desconocido';
   }
 
+  getRoleCode(): AuthRoleCode {
+    return this.getCurrentRole();
+  }
+
   isAuthenticated(): boolean {
-    return !!this.currentUserSubject.value;
+    return !!this.currentUserSubject.value && !!this.getToken();
   }
 
   isTecnico(): boolean {
     return this.getCurrentRole() === 'tecnico';
   }
 
+  isTechnician(): boolean {
+    return this.isTecnico();
+  }
+
   isAdministrador(): boolean {
-    return this.getCurrentRole() === 'administrador';
+    return this.getCurrentRole() === 'administrador' || this.getCurrentRole() === 'manager';
+  }
+
+  isAdmin(): boolean {
+    return this.isAdministrador();
+  }
+
+  isManager(): boolean {
+    return this.getCurrentRole() === 'manager';
   }
 
   private storeSession(response: LoginResponse): void {
@@ -113,17 +138,20 @@ export class AuthService {
     this.currentUserSubject.next(response.user);
   }
 
-  private readStoredUser(): AuthUser | null {
+  private readStoredSession(): StoredAuthSession | null {
     const rawSession = sessionStorage.getItem(AUTH_SESSION_KEY);
 
     if (!rawSession) return null;
 
     try {
-      const session = JSON.parse(rawSession) as StoredAuthSession;
-      return session.user ?? null;
+      return JSON.parse(rawSession) as StoredAuthSession;
     } catch (error) {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       return null;
     }
+  }
+
+  private readStoredUser(): AuthUser | null {
+    return this.readStoredSession()?.user ?? null;
   }
 }

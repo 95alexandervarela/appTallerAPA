@@ -13,8 +13,10 @@ export const roleGuard: CanActivateFn = (route) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   const allowedRoles = (route.data['allowedRoles'] ?? []) as AuthRoleCode[];
+  const currentRole = authService.getCurrentRole();
+  const managerCanUseAdminRoutes = currentRole === 'manager' && allowedRoles.includes('administrador');
 
-  if (!allowedRoles.length || allowedRoles.includes(authService.getCurrentRole())) {
+  if (!allowedRoles.length || allowedRoles.includes(currentRole) || managerCanUseAdminRoutes) {
     return true;
   }
 
