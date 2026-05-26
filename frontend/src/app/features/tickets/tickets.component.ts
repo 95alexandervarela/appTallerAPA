@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { finalize, switchMap, tap, timeout } from 'rxjs';
@@ -9,7 +9,7 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
 import { AuthService } from '../../core/services/auth.service';
-import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
+import { TechnicianOption, TicketComment, TicketsService } from '../../core/services/tickets.service';
 import {
   TICKET_STATUS_CATALOG,
   getTicketStatusClassName,
@@ -94,6 +94,8 @@ type TicketStatusFilter = 'pendiente' | 'diagnostico' | 'reparacion' | '';
   styleUrl: './tickets.component.scss',
 })
 export class TicketsComponent implements OnInit {
+  @ViewChild('ticketCommentsList') private ticketCommentsList?: ElementRef<HTMLElement>;
+
   protected vistaActual: 'dashboard' | 'crear' = 'dashboard';
   protected busquedaTicket = '';
   protected isSavingTicket = false;
@@ -109,11 +111,15 @@ export class TicketsComponent implements OnInit {
   protected assignTicketErrorMessage = '';
   protected statusUpdateMessage = '';
   protected statusUpdateErrorMessage = '';
+  protected ticketCommentErrorMessage = '';
   protected selectedTechnicianId = '';
   protected selectedStatusCode = '';
+  protected newTicketComment = '';
   protected filterStatus: TicketStatusFilter = '';
   protected isAssigningTicket = false;
   protected isUpdatingStatus = false;
+  protected isLoadingTicketComments = false;
+  protected isSendingTicketComment = false;
   protected selectedTicket: TicketResumen | null = null;
   protected usuarioTemporalId = '';
 
@@ -149,6 +155,7 @@ export class TicketsComponent implements OnInit {
 
   protected tickets: TicketResumen[] = [];
   protected technicianOptions: SelectOption[] = [];
+  protected ticketComments: TicketComment[] = [];
 
   protected ticketForm: TicketForm = this.createEmptyTicketForm();
 
@@ -383,7 +390,11 @@ export class TicketsComponent implements OnInit {
     this.selectedStatusCode = ticket.estadoCodigo;
     this.statusUpdateMessage = '';
     this.statusUpdateErrorMessage = '';
+    this.ticketCommentErrorMessage = '';
+    this.newTicketComment = '';
+    this.ticketComments = [];
     this.isTicketDetailDialogOpen = true;
+    this.loadTicketComments(ticket.id);
   }
 
   protected closeTicketDetail(): void {
@@ -391,6 +402,9 @@ export class TicketsComponent implements OnInit {
     this.selectedStatusCode = '';
     this.statusUpdateMessage = '';
     this.statusUpdateErrorMessage = '';
+    this.ticketCommentErrorMessage = '';
+    this.newTicketComment = '';
+    this.ticketComments = [];
   }
 
   protected openAssignTechnicianDialog(): void {
@@ -565,6 +579,66 @@ export class TicketsComponent implements OnInit {
       });
   }
 
+  protected sendTicketComment(): void {
+    if (!this.selectedTicket || this.isSendingTicketComment) return;
+
+    const message = this.newTicketComment.trim();
+
+    if (!message) {
+      this.ticketCommentErrorMessage = 'Escribe un comentario antes de enviar.';
+      return;
+    }
+
+    this.isSendingTicketComment = true;
+    this.ticketCommentErrorMessage = '';
+
+    this.ticketsService
+      .createTicketComment(this.selectedTicket.id, message)
+      .pipe(
+        finalize(() => {
+          this.isSendingTicketComment = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.ticketComments = [...this.ticketComments, response.comment];
+          this.newTicketComment = '';
+          this.scrollTicketCommentsToBottom();
+        },
+        error: (error) => {
+          this.ticketCommentErrorMessage =
+            error.error?.error || error.message || 'No se pudo agregar el comentario.';
+        },
+      });
+  }
+
+  protected getCommentAuthor(comment: TicketComment): string {
+    if (!comment.userId || typeof comment.userId === 'string') return 'Usuario';
+    return comment.userId.nombre_completo || comment.userId.username || 'Usuario';
+  }
+
+  protected formatCommentDate(value: string): string {
+    const createdAt = new Date(value).getTime();
+    const diffMs = Date.now() - createdAt;
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+
+    if (!Number.isFinite(createdAt)) return '';
+    if (diffMs < minute) return 'hace un momento';
+    if (diffMs < hour) return `hace ${Math.floor(diffMs / minute)} min`;
+    if (diffMs < day) return `hace ${Math.floor(diffMs / hour)} h`;
+    if (diffMs < 7 * day) return `hace ${Math.floor(diffMs / day)} d`;
+
+    return new Date(value).toLocaleString('es-HN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   protected isFieldInvalid(field: keyof TicketForm): boolean {
     return this.ticketSubmitted && !String(this.ticketForm[field]).trim();
   }
@@ -594,6 +668,31 @@ export class TicketsComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private loadTicketComments(ticketId: string): void {
+    this.isLoadingTicketComments = true;
+    this.ticketCommentErrorMessage = '';
+
+    this.ticketsService
+      .getTicketComments(ticketId)
+      .pipe(
+        finalize(() => {
+          this.isLoadingTicketComments = false;
+        }),
+      )
+      .subscribe({
+        next: (comments) => {
+          if (this.selectedTicket?.id !== ticketId) return;
+          this.ticketComments = comments;
+          this.scrollTicketCommentsToBottom();
+        },
+        error: (error) => {
+          this.ticketComments = [];
+          this.ticketCommentErrorMessage =
+            error.error?.error || error.message || 'No se pudieron cargar los comentarios.';
+        },
+      });
   }
 
   private loadTechnicians(): void {
@@ -646,6 +745,14 @@ export class TicketsComponent implements OnInit {
   private getTechnicianName(value: TechnicianOption | string | null | undefined): string {
     if (!value || typeof value === 'string') return '';
     return value.nombre_completo || value.username;
+  }
+
+  private scrollTicketCommentsToBottom(): void {
+    setTimeout(() => {
+      const commentsList = this.ticketCommentsList?.nativeElement;
+      if (!commentsList) return;
+      commentsList.scrollTop = commentsList.scrollHeight;
+    });
   }
 
   private isSelectedTicketOwnedByCurrentUser(): boolean {

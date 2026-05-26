@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Ticket = require('../models/ticket.model');
+const TicketComment = require('../models/ticketComment.model');
 const RecepcionEquipo = require('../models/recepcionEquipo.model');
 const Usuario = require('../models/user.model');
 const Rol = require('../models/role.model');
@@ -144,6 +145,73 @@ router.get(
     res.status(200).json(tecnicos);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/:id/comments', requireAuthContext, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket no encontrado' });
+    }
+
+    if (
+      req.authUser.roleCode === 'tecnico' &&
+      !isAssignedToAuthenticatedTechnician(ticket, req.authUser)
+    ) {
+      return res.status(403).json({ error: 'No puedes ver comentarios de otro tecnico' });
+    }
+
+    const comments = await TicketComment.find({
+      ticketId: ticket._id,
+      activo: true
+    })
+      .populate('userId', 'username nombre_completo')
+      .sort({ createdAt: 1 });
+
+    res.status(200).json(comments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/:id/comments', requireAuthContext, async (req, res) => {
+  try {
+    const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
+
+    if (!message) {
+      return res.status(400).json({ error: 'El comentario es requerido' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket no encontrado' });
+    }
+
+    if (
+      req.authUser.roleCode === 'tecnico' &&
+      !isAssignedToAuthenticatedTechnician(ticket, req.authUser)
+    ) {
+      return res.status(403).json({ error: 'No puedes comentar tickets de otro tecnico' });
+    }
+
+    const comment = await TicketComment.create({
+      ticketId: ticket._id,
+      userId: req.authUser.id,
+      message
+    });
+
+    const populatedComment = await TicketComment.findById(comment._id)
+      .populate('userId', 'username nombre_completo');
+
+    res.status(201).json({
+      message: 'Comentario agregado exitosamente',
+      comment: populatedComment
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 

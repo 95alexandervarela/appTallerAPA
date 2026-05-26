@@ -469,6 +469,53 @@
           <span pButtonLabel>Repuestos</span>
         </button>
       </footer>
+
+      <section class="ticket-comments-section">
+        <header class="ticket-comments-title">
+          <h3>💬 Comentarios del ticket</h3>
+        </header>
+
+        <div class="ticket-comments-list" #ticketCommentsList>
+          @if (isLoadingTicketComments) {
+            <p class="ticket-comments-empty">Cargando comentarios...</p>
+          } @else if (ticketComments.length) {
+            @for (comment of ticketComments; track comment._id) {
+              <article class="ticket-comment-item">
+                <strong>{{ getCommentAuthor(comment) }}</strong>
+                <p>{{ comment.message }}</p>
+                <time>{{ formatCommentDate(comment.createdAt) }}</time>
+              </article>
+            }
+          } @else {
+            <p class="ticket-comments-empty">No hay comentarios en este ticket</p>
+          }
+        </div>
+
+        <div class="ticket-comment-form">
+          <textarea
+            name="newTicketComment"
+            [(ngModel)]="newTicketComment"
+            [disabled]="isSendingTicketComment"
+            placeholder="Escribir comentario..."
+          ></textarea>
+
+          @if (ticketCommentErrorMessage) {
+            <p class="form-error">{{ ticketCommentErrorMessage }}</p>
+          }
+
+          <button
+            pButton
+            type="button"
+            class="quick-action-button"
+            [loading]="isSendingTicketComment"
+            [disabled]="isSendingTicketComment || !newTicketComment.trim()"
+            (click)="sendTicketComment()"
+          >
+            <i class="pi pi-send" aria-hidden="true"></i>
+            <span pButtonLabel>Enviar</span>
+          </button>
+        </div>
+      </section>
     }
   </p-dialog>
 

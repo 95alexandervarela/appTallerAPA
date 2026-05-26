@@ -29,6 +29,26 @@ export interface UpdateTicketStatusPayload {
   estadoTicket: string;
 }
 
+export interface TicketCommentUser {
+  _id: string;
+  username: string;
+  nombre_completo?: string;
+}
+
+export interface TicketComment {
+  _id: string;
+  ticketId: string;
+  userId: TicketCommentUser | string;
+  message: string;
+  createdAt: string;
+  activo: boolean;
+}
+
+export interface TicketCommentResponse {
+  message: string;
+  comment: TicketComment;
+}
+
 export interface TicketResponse {
   message: string;
   ticket: {
@@ -94,5 +114,13 @@ export class TicketsService {
 
   updateTicketStatus(id: string, payload: UpdateTicketStatusPayload): Observable<TicketResponse> {
     return this.http.patch<TicketResponse>(`${this.apiUrl}/${id}/status`, payload);
+  }
+
+  getTicketComments(id: string): Observable<TicketComment[]> {
+    return this.http.get<TicketComment[]>(`${this.apiUrl}/${id}/comments`);
+  }
+
+  createTicketComment(id: string, message: string): Observable<TicketCommentResponse> {
+    return this.http.post<TicketCommentResponse>(`${this.apiUrl}/${id}/comments`, { message });
   }
 }
