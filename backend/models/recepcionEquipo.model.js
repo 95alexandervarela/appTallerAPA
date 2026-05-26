@@ -132,7 +132,8 @@ const recepcionEquipoSchema = new mongoose.Schema({
     default: Date.now
   },
   fechaEnvioTaller: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCreacion: {
     type: Date,

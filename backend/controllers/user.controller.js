@@ -20,14 +20,6 @@ exports.createUser = async (req, res) => {
     const { username, email, passwordHash, password, nombre_completo, rol_id } =
       req.body;
 
-    console.log("📨 Datos recibidos:", {
-      username,
-      email,
-      nombre_completo,
-      rol_id,
-      password: password ? "✓" : "✗",
-    });
-
     // Acepta tanto 'password' como 'passwordHash' del cuerpo para mayor flexibilidad
     const rawPassword = password || passwordHash;
 
@@ -44,7 +36,6 @@ exports.createUser = async (req, res) => {
     }
 
     if (!rawPassword) {
-      console.log("❌ Error: falta contraseña");
       return res.status(400).json({ error: "La contraseña es requerida" });
     }
 
@@ -249,11 +240,11 @@ exports.updateUser = async (req, res) => {
 };
 
 /**
- * Elimina definitivamente un usuario del sistema.
+ * Aplica baja logica a un usuario del sistema.
  *
  * @remarks
- * Borra físicamente el documento de MongoDB para liberar los índices únicos de
- * `username` y `email`, permitiendo volver a registrar el mismo usuario si fuera necesario.
+ * No borra fisicamente el documento: marca `activo = false` y registra
+ * `fecha_eliminacion` para conservar trazabilidad y auditoria.
  *
  * @async
  * @function deleteUser
@@ -269,10 +260,12 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    await Usuario.deleteOne({ _id: req.params.id });
+    user.activo = false;
+    user.fecha_eliminacion = new Date();
+    await user.save();
 
     res.status(200).json({
-      message: "Usuario eliminado definitivamente del sistema",
+      message: "Usuario eliminado logicamente del sistema",
     });
   } catch (error) {
     res.status(400).json({ error: error.message });

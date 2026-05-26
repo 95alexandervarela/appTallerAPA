@@ -92,10 +92,12 @@ const entregaEquipoSchema = new mongoose.Schema({
     default: true
   },
   fechaEntrega: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCierre: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCreacion: {
     type: Date,

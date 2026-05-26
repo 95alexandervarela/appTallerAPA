@@ -16,6 +16,16 @@ function createCrudRouter(Model, { resourceName, populate = [], afterCreate, aft
 
   const applyPopulate = (query) =>
     populate.reduce((currentQuery, field) => currentQuery.populate(field), query);
+  const hasPath = (pathName) => Boolean(Model.schema.path(pathName));
+  const activeFilter = () => {
+    const filter = {};
+
+    if (hasPath('activo')) filter.activo = true;
+    if (hasPath('fechaEliminacion')) filter.fechaEliminacion = null;
+
+    return filter;
+  };
+  const sortByCreation = () => (hasPath('fechaCreacion') ? { fechaCreacion: -1 } : { _id: -1 });
 
   router.post('/', async (req, res) => {
     try {
@@ -38,7 +48,7 @@ function createCrudRouter(Model, { resourceName, populate = [], afterCreate, aft
   router.get('/', async (req, res) => {
     try {
       const documents = await applyPopulate(
-        Model.find({ activo: true, fechaEliminacion: null }).sort({ fechaCreacion: -1 })
+        Model.find(activeFilter()).sort(sortByCreation())
       );
 
       res.status(200).json(documents);
@@ -50,7 +60,7 @@ function createCrudRouter(Model, { resourceName, populate = [], afterCreate, aft
   router.get('/:id', async (req, res) => {
     try {
       const document = await applyPopulate(
-        Model.findOne({ _id: req.params.id, activo: true, fechaEliminacion: null })
+        Model.findOne({ _id: req.params.id, ...activeFilter() })
       );
 
       if (!document) {
@@ -67,8 +77,7 @@ function createCrudRouter(Model, { resourceName, populate = [], afterCreate, aft
     try {
       const document = await Model.findOne({
         _id: req.params.id,
-        activo: true,
-        fechaEliminacion: null
+        ...activeFilter()
       });
 
       if (!document) {
@@ -100,16 +109,22 @@ function createCrudRouter(Model, { resourceName, populate = [], afterCreate, aft
     try {
       const document = await Model.findOne({
         _id: req.params.id,
-        activo: true,
-        fechaEliminacion: null
+        ...activeFilter()
       });
 
       if (!document) {
         return res.status(404).json({ error: `${resourceName} no encontrado` });
       }
 
-      document.activo = false;
-      document.fechaEliminacion = Date.now();
+      if (hasPath('activo')) document.activo = false;
+      if (hasPath('fechaEliminacion')) document.fechaEliminacion = Date.now();
+
+      if (!hasPath('activo') && !hasPath('fechaEliminacion')) {
+        return res.status(400).json({
+          error: `${resourceName} no soporta baja logica segura`
+        });
+      }
+
       await document.save();
 
       res.status(200).json({

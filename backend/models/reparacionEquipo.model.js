@@ -91,10 +91,12 @@ const reparacionEquipoSchema = new mongoose.Schema({
     default: true
   },
   fechaInicio: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaFinalizacion: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCreacion: {
     type: Date,

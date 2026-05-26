@@ -99,10 +99,12 @@ const cobroFacturacionSchema = new mongoose.Schema({
     default: true
   },
   fechaAviso: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaPago: {
-    type: Date
+    type: Date,
+    default: null
   },
   fechaCreacion: {
     type: Date,
