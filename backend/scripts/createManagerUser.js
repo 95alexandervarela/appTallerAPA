@@ -23,14 +23,17 @@ const Rol = require("../models/role.model");
 const MONGO_URI =
   process.env.MONGO_URI || "mongodb://127.0.0.1:27017/appTallerAPA";
 const MANAGER_USERNAME = process.env.MANAGER_USERNAME || "gvarela";
-const MANAGER_EMAIL = process.env.MANAGER_EMAIL || "gvarela@almacenpajaroazul.com";
+const MANAGER_EMAIL =
+  process.env.MANAGER_EMAIL || "gvarela@almacenpajaroazul.com";
 const MANAGER_FULLNAME = process.env.MANAGER_FULLNAME || "G Varela";
 const MANAGER_PASSWORD = process.env.MANAGER_TEMP_PASSWORD;
 
 // Validar que contraseña se proporcione via variable de entorno
 if (!MANAGER_PASSWORD) {
   console.error("❌ Error: MANAGER_TEMP_PASSWORD no está configurado");
-  console.error("Uso: MANAGER_TEMP_PASSWORD=<password> node backend/scripts/createManagerUser.js");
+  console.error(
+    "Uso: MANAGER_TEMP_PASSWORD=<password> node backend/scripts/createManagerUser.js",
+  );
   process.exit(1);
 }
 

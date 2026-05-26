@@ -283,6 +283,7 @@ El sistema utiliza **JWT (JSON Web Tokens)** como mecanismo principal de autenti
 #### Estructura del JWT
 
 Payload incluye:
+
 - `sub`: ID del usuario (para recuperar datos de BD si es necesario)
 - `username`: Nombre de usuario
 - `roleCode`: Codigo de rol (administrador, manager, tecnico, recepcion)
@@ -306,6 +307,7 @@ frontend/src/app/core/interceptors/auth-session.interceptor.ts
 ```
 
 Responsabilidades:
+
 - Agrega `Authorization: Bearer <token>` SOLO a requests `/api/*`
 - No altera llamadas a assets, imágenes o URLs externas
 - Captura errores 401 y limpia sesion + redirige a `/login`
@@ -322,6 +324,7 @@ Responsabilidades:
 #### Protecciones Backend
 
 **User Controller** (`backend/controllers/user.controller.js`):
+
 - `POST /` (crear): Solo administrador (manager bypass automático)
 - `GET /`: Filtra usuarios manager para no-managers
 - `GET /:id`: Retorna 404 si es manager y requester no es manager
@@ -329,6 +332,7 @@ Responsabilidades:
 - `DELETE /:id`: Bloquea eliminacion logica de manager para no-managers
 
 **Ticket Controller** (`backend/routes/ticket.routes.js`):
+
 - `GET /`: Tecnico solo ve sus tickets asignados (filtro `tecnicoAsignado`)
 - `GET /:id`: Tecnico no puede ver tickets de otros tecnicos
 - `PUT /:id`: Tecnico solo puede cambiar estados permitidos (matriz `TECHNICIAN_STATUS_UPDATES`)
@@ -336,14 +340,17 @@ Responsabilidades:
 #### Protecciones Frontend
 
 **Guards** (`frontend/src/app/core/guards/`):
+
 - `authGuard`: Valida que exista token + usuario en sesion
 - `roleGuard`: Valida roles permitidos segun `route.data.allowedRoles`
 
 **Rutas Protegidas**:
+
 - `/home`, `/tickets`, `/recepcion-equipo`: Requieren `authGuard`
 - `/config`: Requiere `authGuard` + `roleGuard` con rol `administrador` (manager bypass automático)
 
 **Sidebar Dinamico** (`frontend/src/app/layout/sidebar.component.ts`):
+
 - Tecnico: Oculta "Recepcion de equipo", "Reportes", "Configuracion"
 - Otros roles: Ven menu completo
 
@@ -464,22 +471,22 @@ El servidor escucha en: `http://localhost:3080`
 
 ### Variables de entorno
 
-| Variable | Valor por defecto | Descripcion |
-|---|---|---|
-| `PORT` | `3080` | Puerto del servidor Express |
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017/appTallerAPA` | URI de conexion a MongoDB |
-| `NODE_ENV` | `development` | Entorno de ejecucion |
+| Variable      | Valor por defecto                        | Descripcion                 |
+| ------------- | ---------------------------------------- | --------------------------- |
+| `PORT`        | `3080`                                   | Puerto del servidor Express |
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/appTallerAPA` | URI de conexion a MongoDB   |
+| `NODE_ENV`    | `development`                            | Entorno de ejecucion        |
 
 ### Endpoints de Usuarios
 
 Base path: `/api/users`
 
-| Metodo | Ruta | Descripcion |
-|---|---|---|
-| `GET` | `/api/users` | Obtener todos los usuarios activos |
-| `GET` | `/api/users/:id` | Obtener un usuario por ID |
-| `POST` | `/api/users` | Crear un nuevo usuario |
-| `PUT` | `/api/users/:id` | Actualizar datos de un usuario |
+| Metodo   | Ruta             | Descripcion                             |
+| -------- | ---------------- | --------------------------------------- |
+| `GET`    | `/api/users`     | Obtener todos los usuarios activos      |
+| `GET`    | `/api/users/:id` | Obtener un usuario por ID               |
+| `POST`   | `/api/users`     | Crear un nuevo usuario                  |
+| `PUT`    | `/api/users/:id` | Actualizar datos de un usuario          |
 | `DELETE` | `/api/users/:id` | Baja logica (soft delete) de un usuario |
 
 ### Ejemplo de uso con curl

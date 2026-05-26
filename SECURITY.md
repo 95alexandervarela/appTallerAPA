@@ -17,6 +17,7 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 **Endpoint**: `POST /api/auth/login`
 
 **Flujo**:
+
 1. Usuario envía `username` y `password`
 2. Backend busca usuario en MongoDB por `username` (case-insensitive)
 3. Contraseña validada contra hash PBKDF2 almacenado en `Usuario.passwordHash`
@@ -24,6 +25,7 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 5. JWT contiene payload mínimo y seguro (nunca incluye `passwordHash`)
 
 **Payload JWT**:
+
 ```json
 {
   "sub": "id-del-usuario",
@@ -42,7 +44,9 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 - **Contenido**:
   ```json
   {
-    "user": { /* Usuario minimo */ },
+    "user": {
+      /* Usuario minimo */
+    },
     "token": "eyJhbGc...",
     "sessionMode": "jwt"
   }
@@ -54,6 +58,7 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 **Middleware**: `backend/middleware/authContext.middleware.js` - `requireAuthContext`
 
 **Proceso**:
+
 1. Extrae header `Authorization: Bearer <token>`
 2. Verifica firma JWT con `JWT_SECRET`
 3. Si JWT inválido/expirado: Retorna `401 Unauthorized`
@@ -77,9 +82,11 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 ### Matriz de Roles y Permisos
 
 #### Manager
+
 **Proposito**: Superusuario administrativo del sistema.
 
 **Permisos**:
+
 - ✅ Ver todos los usuarios (incluyendo otros managers)
 - ✅ Crear usuarios (cualquier rol, incluyendo managers)
 - ✅ Editar usuarios (cualquier rol)
@@ -90,14 +97,17 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 - ✅ Bypass automático en rutas que requieren `administrador`
 
 **Restricciones**:
+
 - ❌ No puede ser creado por administrador (solo por manager)
 - ❌ No puede ser editado por administrador
 - ❌ No puede ser eliminado por administrador
 
 #### Administrador
+
 **Proposito**: Gestor de usuarios y configuración (sin acceso a manager).
 
 **Permisos**:
+
 - ✅ Ver usuarios normales (no managers)
 - ✅ Crear usuarios normales
 - ✅ Editar usuarios normales
@@ -107,6 +117,7 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 - ✅ Asignar técnicos a tickets
 
 **Restricciones**:
+
 - ❌ No ve usuarios manager
 - ❌ No puede editar usuario manager
 - ❌ No puede eliminar usuario manager
@@ -114,15 +125,18 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 - ❌ Si intenta acceder a manager: Obtiene `404 Usuario no encontrado`
 
 #### Técnico
+
 **Proposito**: Reparador de equipos, operador de tickets asignados.
 
 **Permisos**:
+
 - ✅ Ver overview con estadísticas propias
 - ✅ Ver solo sus tickets asignados
 - ✅ Actualizar estado de sus tickets (estados permitidos)
 - ✅ Ver detalles de sus tickets
 
 **Restricciones**:
+
 - ❌ No puede acceder a `/api/users`
 - ❌ No ve `/config` en sidebar
 - ❌ Si accede manualmente a `/config`: Redirige a `/home`
@@ -137,13 +151,16 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
   - `reparado_servicio_finalizado`
 
 #### Recepción
+
 **Proposito**: Entrada de equipos al sistema.
 
 **Permisos**:
+
 - ✅ Crear recepción de equipos
 - ✅ Ver sus propias recepciones
 
 **Restricciones**:
+
 - ❌ No acceso a configuración
 - ❌ No acceso a usuarios
 - ❌ No acceso a tickets
@@ -157,34 +174,39 @@ El sistema implementa **autenticación basada en JWT** como mecanismo principal.
 **Función**: `requireRole(allowedRoleCodes)`
 
 ```javascript
-requireRole(['administrador']) // Solo administrador
-requireRole(['tecnico'])        // Solo técnico
-requireRole(['manager'])        // Solo manager
+requireRole(["administrador"]); // Solo administrador
+requireRole(["tecnico"]); // Solo técnico
+requireRole(["manager"]); // Solo manager
 ```
 
 **Manager Bypass**: Si `allowedRoleCodes` incluye `'administrador'` y el usuario es `manager`, se permite acceso automáticamente.
 
 **Ejemplo en rutas**:
+
 ```javascript
-router.post('/', 
+router.post(
+  "/",
   requireAuthContext,
-  requireRole(['administrador']),
-  userController.createUser
+  requireRole(["administrador"]),
+  userController.createUser,
 );
 ```
 
 #### Frontend - Guards de Rutas
 
 **authGuard** (`frontend/src/app/core/guards/auth.guard.ts`):
+
 - Valida que exista usuario + token en `sessionStorage`
 - Si no: Redirige a `/login`
 
 **roleGuard** (`frontend/src/app/core/guards/role.guard.ts`):
+
 - Valida rol en `route.data.allowedRoles`
 - Manager bypass automático para rutas de `administrador`
 - Si no tiene permiso: Redirige a `/home`
 
 **Ejemplo en rutas**:
+
 ```typescript
 {
   path: 'config',
@@ -199,23 +221,23 @@ router.post('/',
 
 #### Usuarios (`/api/users`)
 
-| Método | Proteccion | Comportamiento |
-|--------|-----------|-----------------|
-| `POST /` | Administrador | Crea usuario. Manager puede crear managers. |
-| `GET /` | Administrador | Lista usuarios. Administrador no ve managers. |
-| `GET /:id` | Administrador | Retorna 404 si es manager y no es manager. |
-| `PUT /:id` | Administrador | Bloquea edicion de managers (solo manager puede). |
+| Método        | Proteccion    | Comportamiento                                        |
+| ------------- | ------------- | ----------------------------------------------------- |
+| `POST /`      | Administrador | Crea usuario. Manager puede crear managers.           |
+| `GET /`       | Administrador | Lista usuarios. Administrador no ve managers.         |
+| `GET /:id`    | Administrador | Retorna 404 si es manager y no es manager.            |
+| `PUT /:id`    | Administrador | Bloquea edicion de managers (solo manager puede).     |
 | `DELETE /:id` | Administrador | Bloquea eliminacion de managers (solo manager puede). |
 
 #### Tickets (`/api/tickets`)
 
-| Método | Proteccion | Comportamiento |
-|--------|-----------|-----------------|
-| `POST /` | Autenticado | Crea ticket. Técnico ve solo los suyos. |
-| `GET /` | Autenticado | Lista tickets. Técnico: filtro por `tecnicoAsignado`. |
-| `GET /:id` | Autenticado | Técnico: 403 si no es el asignado. |
-| `PUT /:id` | Autenticado | Técnico: Solo estados permitidos. |
-| `DELETE /:id` | Autenticado | (Futuro) Eliminación lógica de tickets. |
+| Método        | Proteccion  | Comportamiento                                        |
+| ------------- | ----------- | ----------------------------------------------------- |
+| `POST /`      | Autenticado | Crea ticket. Técnico ve solo los suyos.               |
+| `GET /`       | Autenticado | Lista tickets. Técnico: filtro por `tecnicoAsignado`. |
+| `GET /:id`    | Autenticado | Técnico: 403 si no es el asignado.                    |
+| `PUT /:id`    | Autenticado | Técnico: Solo estados permitidos.                     |
+| `DELETE /:id` | Autenticado | (Futuro) Eliminación lógica de tickets.               |
 
 ---
 
@@ -224,6 +246,7 @@ router.post('/',
 ### Datos Nunca Expuestos
 
 Los siguientes campos **NUNCA** se incluyen en respuestas HTTP:
+
 - `passwordHash` (excluido con `-passwordHash` en queries)
 - Salt de contraseña (no visible, generado internamente)
 - JWT_SECRET (solo en backend)
@@ -232,6 +255,7 @@ Los siguientes campos **NUNCA** se incluyen en respuestas HTTP:
 ### Datos en Sesion Frontend
 
 **sessionStorage** incluye:
+
 - ID del usuario
 - Username
 - Nombre completo
@@ -240,6 +264,7 @@ Los siguientes campos **NUNCA** se incluyen en respuestas HTTP:
 - Token JWT
 
 **sessionStorage NO incluye**:
+
 - Contraseña
 - Hash de contraseña
 - JWT_SECRET
@@ -251,6 +276,7 @@ Los siguientes campos **NUNCA** se incluyen en respuestas HTTP:
 ### Cierre de Sesión
 
 **Logout Local** (`frontend/src/app/core/services/auth.service.ts`):
+
 ```typescript
 logout(): void {
   sessionStorage.removeItem(AUTH_SESSION_KEY);
@@ -259,6 +285,7 @@ logout(): void {
 ```
 
 **Limpieza en 401** (Interceptor automático):
+
 - Backend retorna `401 Unauthorized`
 - Frontend limpia sesión automáticamente
 - Redirige a `/login`
@@ -281,10 +308,12 @@ logout(): void {
 ### Comportamiento
 
 **Adjunta Authorization SOLO a**:
+
 - Peticiones que comienzan con `/api`
 - Peticiones a `localhost:3080/api`
 
 **NO adjunta Authorization a**:
+
 - Llamadas a assets (CSS, JS, images)
 - Llamadas externas
 - `POST /api/auth/login` (por protocolo)
@@ -293,8 +322,8 @@ logout(): void {
 
 ```typescript
 if (error.status === 401 && isApiRequest) {
-  authService.logout();  // Limpia sesion
-  router.navigateByUrl('/login');  // Redirige
+  authService.logout(); // Limpia sesion
+  router.navigateByUrl("/login"); // Redirige
 }
 ```
 
@@ -305,6 +334,7 @@ if (error.status === 401 && isApiRequest) {
 **Archivo**: `backend/server.js`
 
 **Origenes Permitidos**:
+
 - `http://localhost:4200`
 - `http://127.0.0.1:4200`
 - `http://[::1]:4200` (IPv6 loopback)
@@ -319,10 +349,12 @@ if (error.status === 401 && isApiRequest) {
 ## 7. Validaciones de Entrada
 
 ### Login
+
 - Username: No vacío, trim, lowercase
 - Password: No vacío
 
 ### Creación de Usuario
+
 - Username: No vacío, único, lowercase
 - Email: Formato válido, único
 - Nombre: No vacío
@@ -331,6 +363,7 @@ if (error.status === 401 && isApiRequest) {
 - Manager: Solo manager puede crear
 
 ### Actualización de Usuario
+
 - Duplicados validados en cada campo
 - Manager: No puede ser modificado por administrador
 - Rol manager: No puede ser asignado por administrador
