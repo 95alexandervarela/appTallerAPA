@@ -6,7 +6,8 @@ async function updateTicketFromEntrega(document, req) {
   if (document.estadoEntrega === 'cerrado' || document.estadoEntrega === 'entregado') {
     await applyTicketState(document.ticketId, TicketStateAction.ENTREGA_COMPLETADA, {
       changedBy: req.authUser?.id,
-      comment: 'Estado actualizado por entrega y cierre'
+      comment: 'Estado actualizado por entrega y cierre',
+      blockFinalStatusChange: true
     });
   }
 }

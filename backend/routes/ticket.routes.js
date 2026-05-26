@@ -8,14 +8,6 @@ const { requireAuthContext, requireRole } = require('../middleware/authContext.m
 const { TicketStateAction, applyTicketState } = require('../services/ticketState.service');
 
 const LEGACY_TECNICO_ROLE_ID = '6a126c9296a6e0cb6e9df8a4';
-const TECHNICIAN_STATUS_UPDATES = new Set([
-  'en_diagnostico',
-  'diagnosticado',
-  'espera_repuesto',
-  'listo_para_reparacion',
-  'en_reparacion',
-  'reparado_servicio_finalizado',
-]);
 
 const getTecnicoRoleIds = async () => {
   const rolTecnico = await Rol.findOne({ codigo: 'tecnico', activo: true });
@@ -196,7 +188,7 @@ router.put('/:id', requireAuthContext, async (req, res) => {
       const onlyStatusUpdate =
         requestedFields.length === 1 && requestedFields[0] === 'estadoTicket';
 
-      if (!onlyStatusUpdate || !TECHNICIAN_STATUS_UPDATES.has(req.body.estadoTicket)) {
+      if (!onlyStatusUpdate) {
         return res.status(403).json({ error: 'Cambio no permitido para perfil Tecnico' });
       }
     }
@@ -223,7 +215,9 @@ router.put('/:id', requireAuthContext, async (req, res) => {
       await applyTicketState(ticket._id, TicketStateAction.MANUAL_STATUS_UPDATE, {
         estadoTicket: req.body.estadoTicket,
         changedBy: req.authUser.id,
-        comment: 'Estado actualizado desde PUT /api/tickets/:id'
+        comment: 'Estado actualizado desde PUT /api/tickets/:id',
+        blockFinalStatusChange: true,
+        bypassTransitionValidation: true
       });
     }
 
@@ -239,19 +233,15 @@ router.put('/:id', requireAuthContext, async (req, res) => {
 });
 
 /**
- * Actualiza el estado operativo de un ticket para el flujo de Tecnico.
+ * Actualiza el estado operativo de un ticket.
  *
  * @remarks
- * Restringe al Tecnico a sus tickets asignados y a estados operativos
- * permitidos. No permite cierres administrativos desde este flujo.
+ * Todos los usuarios autenticados pueden cambiar estado desde este flujo. El
+ * servicio conserva la proteccion de tickets finalizados.
  */
 router.patch('/:id/status', requireAuthContext, async (req, res) => {
   try {
     const { estadoTicket } = req.body;
-
-    if (!TECHNICIAN_STATUS_UPDATES.has(estadoTicket)) {
-      return res.status(400).json({ error: 'Estado no permitido para actualizacion tecnica' });
-    }
 
     const ticket = await Ticket.findById(req.params.id);
 
@@ -269,7 +259,9 @@ router.patch('/:id/status', requireAuthContext, async (req, res) => {
     await applyTicketState(ticket._id, TicketStateAction.MANUAL_STATUS_UPDATE, {
       estadoTicket,
       changedBy: req.authUser.id,
-      comment: 'Estado actualizado desde PATCH /api/tickets/:id/status'
+      comment: 'Estado actualizado desde PATCH /api/tickets/:id/status',
+      blockFinalStatusChange: true,
+      bypassTransitionValidation: true
     });
 
     const ticketActualizado = await populateTicket(Ticket.findById(ticket._id));

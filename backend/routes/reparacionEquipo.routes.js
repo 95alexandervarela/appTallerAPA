@@ -5,7 +5,8 @@ const { TicketStateAction, applyTicketState } = require('../services/ticketState
 async function updateTicketFromReparacion(document, req) {
   const options = {
     changedBy: req.authUser?.id,
-    comment: 'Estado actualizado por reparacion de equipo'
+    comment: 'Estado actualizado por reparacion de equipo',
+    blockFinalStatusChange: true
   };
 
   if (document.estadoReparacion === 'validado_tecnicamente' || document.validacionTecnicaAprobada) {

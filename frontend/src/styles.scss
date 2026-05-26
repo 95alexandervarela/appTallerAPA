@@ -206,3 +206,60 @@ samp {
   background: rgba(148, 163, 184, 0.12);
   color: #e2e8f0;
 }
+
+/**
+ * @section Dark dropdown overlays
+ *
+ * @remarks
+ * PrimeNG renders select overlays in `body`, so modal-scoped styles do not
+ * reach the panel. Keep dropdown inputs and panels aligned with the glass/dark
+ * theme from the rest of the app.
+ */
+.panel-dropdown-dark,
+.p-dropdown-panel,
+.p-select-overlay,
+.p-select-panel {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+  backdrop-filter: blur(10px);
+  z-index: 9999 !important;
+}
+
+.p-dropdown,
+.p-select {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.5);
+  color: #e2e8f0;
+}
+
+.p-dropdown-label,
+.p-select-label {
+  color: #e2e8f0;
+}
+
+.p-dropdown-item,
+.p-select-option {
+  color: #e2e8f0;
+}
+
+.p-dropdown-item:hover,
+.p-select-option:not(.p-select-option-selected):not(.p-disabled):hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.p-dropdown-item.p-highlight,
+.p-select-option.p-select-option-selected {
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+select.status-native-select {
+  max-width: 100%;
+  cursor: pointer;
+}
+
+select.status-native-select option {
+  background: #0f172a;
+  color: #e2e8f0;
+}

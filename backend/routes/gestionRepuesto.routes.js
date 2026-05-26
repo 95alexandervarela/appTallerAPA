@@ -5,7 +5,8 @@ const { TicketStateAction, applyTicketState } = require('../services/ticketState
 async function updateTicketFromRepuesto(document, req) {
   const options = {
     changedBy: req.authUser?.id,
-    comment: 'Estado actualizado por gestion de repuesto'
+    comment: 'Estado actualizado por gestion de repuesto',
+    blockFinalStatusChange: true
   };
 
   if (document.entregadoTecnico || document.estadoRepuesto === 'entregado_tecnico') {

@@ -11,6 +11,7 @@ import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.ser
 import { AuthService } from '../../core/services/auth.service';
 import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
 import {
+  TICKET_STATUS_CATALOG,
   getTicketStatusClassName,
   getTicketStatusLabel,
   isTicketStatusInGroup,
@@ -131,14 +132,12 @@ export class TicketsComponent implements OnInit {
     { label: 'Equipo no ingresado', value: 'equipo_no_ingresado' },
   ];
 
-  protected readonly technicianStatusOptions: SelectOption[] = [
-    { label: 'En diagnostico', value: 'en_diagnostico' },
-    { label: 'Diagnostico registrado', value: 'diagnosticado' },
-    { label: 'Espera repuesto', value: 'espera_repuesto' },
-    { label: 'Listo para reparacion', value: 'listo_para_reparacion' },
-    { label: 'En reparacion', value: 'en_reparacion' },
-    { label: 'Reparado', value: 'reparado_servicio_finalizado' },
-  ];
+  protected readonly ticketStatusOptions: SelectOption[] = Object.values(TICKET_STATUS_CATALOG)
+    .sort((firstStatus, secondStatus) => firstStatus.order - secondStatus.order)
+    .map((status) => ({
+      label: status.label,
+      value: status.code,
+    }));
 
   protected tickets: TicketResumen[] = [];
   protected technicianOptions: SelectOption[] = [];
@@ -502,25 +501,39 @@ export class TicketsComponent implements OnInit {
   }
 
   protected canUpdateTicketStatus(): boolean {
-    return this.authService.isTecnico() && this.isSelectedTicketOwnedByCurrentUser();
+    return !!this.selectedTicket;
+  }
+
+  protected get statusOptionsForCurrentUser(): SelectOption[] {
+    return this.ticketStatusOptions;
   }
 
   /**
-   * Actualiza estado de tickets propios para el flujo Tecnico.
+   * Actualiza el estado desde la pildora interactiva del detalle.
    *
    * @remarks
-   * El backend vuelve a validar propiedad del ticket y estados permitidos; el
-   * frontend solo muestra la accion cuando corresponde al usuario autenticado.
+   * El backend conserva la validacion definitiva, incluida la proteccion de
+   * tickets finalizados.
    */
-  protected updateSelectedTicketStatus(): void {
-    if (!this.selectedTicket || !this.canUpdateTicketStatus() || !this.selectedStatusCode) return;
+  protected updateSelectedTicketStatus(nextStatusCode: string): void {
+    if (!this.selectedTicket || !this.canUpdateTicketStatus() || !nextStatusCode || this.isUpdatingStatus) {
+      return;
+    }
+
+    if (nextStatusCode === this.selectedTicket.estadoCodigo) {
+      this.selectedStatusCode = nextStatusCode;
+      return;
+    }
+
+    const previousStatusCode = this.selectedTicket.estadoCodigo;
+    this.selectedStatusCode = nextStatusCode;
 
     this.isUpdatingStatus = true;
     this.statusUpdateMessage = '';
     this.statusUpdateErrorMessage = '';
 
     this.ticketsService
-      .updateTicketStatus(this.selectedTicket.id, { estadoTicket: this.selectedStatusCode })
+      .updateTicketStatus(this.selectedTicket.id, { estadoTicket: nextStatusCode })
       .pipe(
         finalize(() => {
           this.isUpdatingStatus = false;
@@ -537,6 +550,7 @@ export class TicketsComponent implements OnInit {
           this.statusUpdateMessage = 'Estado actualizado.';
         },
         error: (error) => {
+          this.selectedStatusCode = previousStatusCode;
           this.statusUpdateErrorMessage =
             error.error?.error || error.message || 'No se pudo actualizar el estado.';
         },

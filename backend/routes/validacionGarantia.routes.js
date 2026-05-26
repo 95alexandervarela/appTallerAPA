@@ -5,7 +5,8 @@ const { TicketStateAction, applyTicketState } = require('../services/ticketState
 async function updateTicketFromGarantia(document, req) {
   const options = {
     changedBy: req.authUser?.id,
-    comment: 'Estado actualizado por validacion de garantia'
+    comment: 'Estado actualizado por validacion de garantia',
+    blockFinalStatusChange: true
   };
 
   if (document.requiereRepuesto || document.estadoValidacion === 'pendiente_repuesto') {

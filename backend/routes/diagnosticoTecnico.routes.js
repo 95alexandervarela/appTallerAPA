@@ -5,7 +5,8 @@ const { TicketStateAction, applyTicketState } = require('../services/ticketState
 async function updateTicketFromDiagnostico(document, req) {
   const options = {
     changedBy: req.authUser?.id,
-    comment: 'Estado actualizado por diagnostico tecnico'
+    comment: 'Estado actualizado por diagnostico tecnico',
+    blockFinalStatusChange: true
   };
 
   if (document.requiereGarantiaAutorizacion) {
