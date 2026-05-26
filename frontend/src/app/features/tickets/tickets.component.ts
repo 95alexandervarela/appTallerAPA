@@ -67,6 +67,7 @@ interface TicketForm {
   comprobanteEntregado: boolean;
   equipoEtiquetado: boolean;
   estadoRecepcion: string;
+  prioridad: string;
 }
 
 type TicketStatusFilter = 'pendiente' | 'diagnostico' | 'reparacion' | '';
@@ -130,6 +131,13 @@ export class TicketsComponent implements OnInit {
     { label: 'Registrado', value: 'registrado' },
     { label: 'En diagnostico', value: 'en_diagnostico' },
     { label: 'Equipo no ingresado', value: 'equipo_no_ingresado' },
+  ];
+
+  protected readonly prioridadOptions: SelectOption[] = [
+    { label: 'Baja', value: 'baja' },
+    { label: 'Media', value: 'media' },
+    { label: 'Alta', value: 'alta' },
+    { label: 'Urgente', value: 'urgente' },
   ];
 
   protected readonly ticketStatusOptions: SelectOption[] = Object.values(TICKET_STATUS_CATALOG)
@@ -311,7 +319,7 @@ export class TicketsComponent implements OnInit {
             numeroTicket: numeroCaso,
             recepcionEquipoId: response.recepcion._id,
             creadoPor: this.usuarioTemporalId,
-            prioridad: 'media',
+            prioridad: this.ticketForm.prioridad,
             estadoTicket: 'creado',
           }).pipe(timeout(15000));
         }),
@@ -690,6 +698,7 @@ export class TicketsComponent implements OnInit {
       comprobanteEntregado: false,
       equipoEtiquetado: false,
       estadoRecepcion: 'registrado',
+      prioridad: 'media',
     };
   }
 }

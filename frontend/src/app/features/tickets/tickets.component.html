@@ -117,6 +117,19 @@
               appendTo="body"
             />
           </div>
+
+          <div class="form-field">
+            <span>Prioridad</span>
+            <p-select
+              name="prioridad"
+              [options]="prioridadOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="ticketForm.prioridad"
+              placeholder="Seleccionar prioridad"
+              appendTo="body"
+            />
+          </div>
         </div>
       </section>
 
