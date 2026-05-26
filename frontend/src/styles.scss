@@ -101,3 +101,108 @@ samp {
 .text-title {
   line-height: 1.2;
 }
+
+/**
+ * @section Ticket status badges
+ *
+ * @remarks
+ * Pildoras visuales globales para estados de tickets. Se usan con el
+ * `className` del diccionario central y evitan depender de los colores internos
+ * de PrimeNG `p-tag`.
+ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.status-badge--creado {
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+.status-badge--asignado {
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.18);
+  color: #c4b5fd;
+}
+
+.status-badge--en-diagnostico {
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  background: rgba(6, 182, 212, 0.16);
+  color: #67e8f9;
+}
+
+.status-badge--pendiente-aprobacion {
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+}
+
+.status-badge--espera-repuesto {
+  border: 1px solid rgba(249, 115, 22, 0.28);
+  background: rgba(249, 115, 22, 0.16);
+  color: #fdba74;
+}
+
+.status-badge--listo-para-reparacion {
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.16);
+  color: #ddd6fe;
+}
+
+.status-badge--en-reparacion {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+.status-badge--reparado {
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+
+.status-badge--listo-entrega {
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  background: rgba(14, 165, 233, 0.16);
+  color: #7dd3fc;
+}
+
+.status-badge--cerrado {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+}
+
+.status-badge--cancelado {
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+
+.status-badge--en-excepcion {
+  border: 1px solid rgba(217, 70, 239, 0.28);
+  background: rgba(217, 70, 239, 0.16);
+  color: #f0abfc;
+}
+
+.status-badge--fallback {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+}

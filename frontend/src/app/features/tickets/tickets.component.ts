@@ -10,6 +10,11 @@ import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TechnicianOption, TicketsService } from '../../core/services/tickets.service';
+import {
+  getTicketStatusClassName,
+  getTicketStatusLabel,
+  isTicketStatusInGroup,
+} from '../../core/constants/ticket-status.catalog';
 import { DiagnosticoTecnicoComponent } from './diagnostico/diagnostico-tecnico.component';
 import { GarantiaTicketComponent } from './garantia/garantia-ticket.component';
 import { RepuestosTicketComponent } from './repuestos/repuestos-ticket.component';
@@ -35,6 +40,7 @@ interface TicketResumen {
   tecnicoAsignadoNombre: string;
   estado: string;
   estadoCodigo: string;
+  estadoClassName: string;
   prioridad: string;
   fechaCreacion: string;
 }
@@ -204,25 +210,15 @@ export class TicketsComponent implements OnInit {
 
   private matchesStatusFilter(estadoCodigo: string): boolean {
     if (this.filterStatus === 'pendiente') {
-      return (
-        estadoCodigo === 'asignado' ||
-        estadoCodigo === 'espera_repuesto' ||
-        estadoCodigo.startsWith('pendiente')
-      );
+      return isTicketStatusInGroup(estadoCodigo, ['pendiente', 'garantia', 'repuesto']);
     }
 
     if (this.filterStatus === 'diagnostico') {
-      return ['en_diagnostico', 'diagnostico', 'diagnosticado'].includes(estadoCodigo);
+      return isTicketStatusInGroup(estadoCodigo, ['diagnostico']);
     }
 
     if (this.filterStatus === 'reparacion') {
-      return [
-        'reparacion_autorizada',
-        'listo_reparacion',
-        'listo_para_reparacion',
-        'en_reparacion',
-        'reparado_servicio_finalizado',
-      ].includes(estadoCodigo);
+      return isTicketStatusInGroup(estadoCodigo, ['reparacion']);
     }
 
     return true;
@@ -343,8 +339,9 @@ export class TicketsComponent implements OnInit {
               accesoriosEntregados: response.ticket.accesoriosEntregados || [],
               tecnicoAsignadoId: this.getTechnicianId(response.ticket.tecnicoAsignado),
               tecnicoAsignadoNombre: this.getTechnicianName(response.ticket.tecnicoAsignado),
-              estado: this.formatEstado(response.ticket.estadoTicket),
+              estado: getTicketStatusLabel(response.ticket.estadoTicket),
               estadoCodigo: response.ticket.estadoTicket,
+              estadoClassName: getTicketStatusClassName(response.ticket.estadoTicket),
               prioridad: response.ticket.prioridad,
               fechaCreacion: response.ticket.fechaCreacion || '',
             },
@@ -611,8 +608,9 @@ export class TicketsComponent implements OnInit {
       accesoriosEntregados: ticket.accesoriosEntregados || [],
       tecnicoAsignadoId: this.getTechnicianId(ticket.tecnicoAsignado),
       tecnicoAsignadoNombre: this.getTechnicianName(ticket.tecnicoAsignado),
-      estado: this.formatEstado(ticket.estadoTicket),
+      estado: getTicketStatusLabel(ticket.estadoTicket),
       estadoCodigo: ticket.estadoTicket,
+      estadoClassName: getTicketStatusClassName(ticket.estadoTicket),
       prioridad: ticket.prioridad,
       fechaCreacion: ticket.fechaCreacion || '',
     };
@@ -641,13 +639,6 @@ export class TicketsComponent implements OnInit {
       .split(/,|\n/)
       .map((item) => item.trim())
       .filter(Boolean);
-  }
-
-  private formatEstado(value: string): string {
-    return value
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   private isTicketFormValid(): boolean {

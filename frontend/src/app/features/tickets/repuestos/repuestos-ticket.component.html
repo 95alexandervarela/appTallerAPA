@@ -10,7 +10,9 @@
     </div>
     <div>
       <span>Estado actual</span>
-      <strong>{{ ticket?.estado || 'Sin estado' }}</strong>
+      <span [class]="ticket?.estadoClassName || 'status-badge status-badge--fallback'">
+        {{ ticket?.estado || 'Sin estado' }}
+      </span>
     </div>
     <div>
       <span>Equipo</span>

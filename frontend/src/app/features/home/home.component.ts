@@ -6,6 +6,12 @@ import { TagModule } from 'primeng/tag';
 import { CardComponent } from '../../shared/components/card.component';
 import { TicketsService } from '../../core/services/tickets.service';
 import { AuthService } from '../../core/services/auth.service';
+import {
+  getTicketStatusClassName,
+  getTicketStatusLabel,
+  isOpenTicketStatus,
+  isTicketStatusInGroup,
+} from '../../core/constants/ticket-status.catalog';
 
 interface DashboardMetric {
   title: string;
@@ -26,7 +32,7 @@ interface RecentTicket {
   id: string;
   title: string;
   status: string;
-  severity: 'success' | 'info' | 'warn' | 'danger';
+  statusClassName: string;
 }
 
 interface ChartBar {
@@ -148,17 +154,11 @@ export class HomeComponent implements OnInit {
      */
     if (this.authService.isTecnico()) {
       const pendientesTecnico = safeTickets.filter((t) =>
-        ['asignado', 'pendiente_aprobacion', 'pendiente_repuesto', 'espera_repuesto'].includes(
-          t.estadoTicket,
-        ),
+        isTicketStatusInGroup(t.estadoTicket, ['pendiente', 'garantia', 'repuesto']),
       ).length;
-      const diagnostico = safeTickets.filter((t) =>
-        ['en_diagnostico', 'diagnostico', 'diagnosticado'].includes(t.estadoTicket),
-      ).length;
+      const diagnostico = safeTickets.filter((t) => isTicketStatusInGroup(t.estadoTicket, ['diagnostico'])).length;
       const reparacion = safeTickets.filter((t) =>
-        ['listo_para_reparacion', 'en_reparacion', 'reparado_servicio_finalizado'].includes(
-          t.estadoTicket,
-        ),
+        isTicketStatusInGroup(t.estadoTicket, ['reparacion']),
       ).length;
 
       this.metrics[0].value = safeTickets.length.toString();
@@ -166,9 +166,11 @@ export class HomeComponent implements OnInit {
       this.metrics[2].value = diagnostico.toString();
       this.metrics[3].value = reparacion.toString();
     } else {
-      const abiertos = safeTickets.filter((t) => !['cerrado', 'cancelado', 'entregado'].includes(t.estadoTicket)).length;
-      const cerrados = safeTickets.filter((t) => ['cerrado', 'entregado'].includes(t.estadoTicket)).length;
-      const pendientes = safeTickets.filter((t) => t.estadoTicket?.startsWith('pendiente')).length;
+      const abiertos = safeTickets.filter((t) => isOpenTicketStatus(t.estadoTicket)).length;
+      const cerrados = safeTickets.filter((t) => isTicketStatusInGroup(t.estadoTicket, ['cerrado'])).length;
+      const pendientes = safeTickets.filter((t) =>
+        isTicketStatusInGroup(t.estadoTicket, ['pendiente', 'garantia', 'repuesto']),
+      ).length;
 
       const altaPrioridad = safeTickets.filter((t) => t.prioridad === 'alta' || t.prioridad === 'urgente').length;
 
@@ -189,8 +191,8 @@ export class HomeComponent implements OnInit {
       .map((t) => ({
         id: t.numeroTicket,
         title: t.tipoEquipo || 'Equipo',
-        status: t.estadoTicket,
-        severity: this.getSeverityFromStatus(t.estadoTicket),
+        status: getTicketStatusLabel(t.estadoTicket),
+        statusClassName: getTicketStatusClassName(t.estadoTicket),
       }));
 
     // Resumen operativo simulado
@@ -228,7 +230,7 @@ export class HomeComponent implements OnInit {
     // Contar tickets por estado
     const countByStatus: { [key: string]: number } = {};
     tickets.forEach((t) => {
-      const status = t.estadoTicket || 'Desconocido';
+      const status = getTicketStatusLabel(t.estadoTicket);
       countByStatus[status] = (countByStatus[status] || 0) + 1;
     });
 
@@ -281,19 +283,4 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  private getSeverityFromStatus(status: string): 'success' | 'info' | 'warn' | 'danger' {
-    switch (status) {
-      case 'cerrado':
-      case 'entregado':
-        return 'success';
-      case 'en_reparacion':
-      case 'en_diagnostico':
-        return 'info';
-      case 'pendiente_aprobacion':
-      case 'pendiente_repuesto':
-        return 'danger';
-      default:
-        return 'warn';
-    }
-  }
 }

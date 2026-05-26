@@ -60,7 +60,7 @@
         <div class="ticket-row">
           <span>{{ ticket.id }}</span>
           <strong>{{ ticket.title }}</strong>
-          <p-tag [value]="ticket.status" [severity]="ticket.severity" />
+          <span [class]="ticket.statusClassName">{{ ticket.status }}</span>
         </div>
       }
     </p-card>

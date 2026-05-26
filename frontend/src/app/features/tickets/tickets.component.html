@@ -52,7 +52,7 @@
               <span>{{ ticket.numeroCaso }}</span>
               <strong>{{ ticket.cliente }}</strong>
               <em>{{ ticket.equipo }}</em>
-              <p-tag [value]="ticket.estado" severity="info" />
+              <span [class]="ticket.estadoClassName">{{ ticket.estado }}</span>
             </button>
           } @empty {
             <div class="empty-row">No hay tickets para mostrar.</div>
@@ -386,7 +386,7 @@
         </div>
         <div>
           <span>Estado</span>
-          <strong>{{ selectedTicket.estado }}</strong>
+          <span [class]="selectedTicket.estadoClassName">{{ selectedTicket.estado }}</span>
         </div>
         <div>
           <span>Prioridad</span>
