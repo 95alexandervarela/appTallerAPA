@@ -6,6 +6,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
+import { AuthRoleCode, AuthService } from '../../core/services/auth.service';
 import { UsersService } from '../../core/services/users.service';
 
 interface UserRow {
@@ -15,6 +16,7 @@ interface UserRow {
   name: string;
   role: string;
   roleId: string;
+  roleCode: string;
   activo: boolean;
   status: string;
   severity: 'success' | 'info' | 'warn';
@@ -33,6 +35,7 @@ interface CreateUserForm {
 interface RoleOption {
   label: string;
   value: string;
+  code: string;
 }
 
 interface StatusOption {
@@ -100,6 +103,7 @@ export class UsersPanelComponent implements OnInit {
 
   constructor(
     private usersService: UsersService,
+    private authService: AuthService,
     private changeDetectorRef: ChangeDetectorRef,
   ) {}
 
@@ -115,12 +119,21 @@ export class UsersPanelComponent implements OnInit {
           this.mergeRoleOption({
             label: role.nombre,
             value: role._id,
+            code: role.codigo,
           });
         });
       },
       error: () => {
-        this.mergeRoleOption({ label: 'Administrador', value: '6a126c9296a6e0cb6e9df8a3' });
-        this.mergeRoleOption({ label: 'Tecnico', value: '6a126c9296a6e0cb6e9df8a4' });
+        this.mergeRoleOption({
+          label: 'Administrador',
+          value: '6a126c9296a6e0cb6e9df8a3',
+          code: 'administrador',
+        });
+        this.mergeRoleOption({
+          label: 'Tecnico',
+          value: '6a126c9296a6e0cb6e9df8a4',
+          code: 'tecnico',
+        });
       },
     });
   }
@@ -153,15 +166,17 @@ export class UsersPanelComponent implements OnInit {
             name: user.nombre_completo,
             role: user.roleName || this.roleLabelMap.get(user.roleId || user.rol_id) || 'Desconocido',
             roleId: user.roleId || user.rol_id,
+            roleCode: user.roleCode || 'desconocido',
             activo: user.activo,
             status: user.activo ? 'Activo' : 'Inactivo',
-            severity: user.activo ? 'success' : 'warn',
-          }));
+            severity: user.activo ? 'success' as const : 'warn' as const,
+          })).filter((user) => this.canViewUser(user));
           users.forEach((user) => {
             if (user.roleId && user.roleName) {
               this.mergeRoleOption({
                 label: user.roleName,
                 value: user.roleId,
+                code: user.roleCode || 'desconocido',
               });
             }
           });
@@ -195,7 +210,7 @@ export class UsersPanelComponent implements OnInit {
   protected openEditUserDialog(): void {
     const user = this.selectedUser || this.users[0];
 
-    if (!user) return;
+    if (!user || !this.canEditUser(user)) return;
 
     this.editUserSubmitted = false;
     this.editUserErrorMessage = '';
@@ -221,7 +236,7 @@ export class UsersPanelComponent implements OnInit {
   }
 
   protected openDeleteUserDialog(): void {
-    if (!this.selectedUser) return;
+    if (!this.selectedUser || !this.canDeleteUser(this.selectedUser)) return;
 
     this.deleteUserErrorMessage = '';
     this.isDeleteUserDialogOpen = true;
@@ -268,6 +283,11 @@ export class UsersPanelComponent implements OnInit {
     this.editUserSubmitted = true;
     this.editUserErrorMessage = '';
     this.editUserSuccessMessage = '';
+
+    if (!this.canEditUser(this.selectedUser)) {
+      this.editUserErrorMessage = '⚠️ No tienes permisos para modificar este usuario.';
+      return;
+    }
 
     if (!this.isEditUserFormValid()) {
       return;
@@ -323,9 +343,10 @@ export class UsersPanelComponent implements OnInit {
             name: updatedUser.nombre_completo,
             role: updatedUser.roleName || this.roleLabelMap.get(updatedUser.roleId || updatedUser.rol_id) || 'Desconocido',
             roleId: updatedUser.roleId || updatedUser.rol_id,
+            roleCode: updatedUser.roleCode || 'desconocido',
             activo: updatedUser.activo,
             status: updatedUser.activo ? 'Activo' : 'Inactivo',
-            severity: updatedUser.activo ? 'success' : 'warn',
+            severity: updatedUser.activo ? 'success' as const : 'warn' as const,
           };
         }
 
@@ -354,6 +375,11 @@ export class UsersPanelComponent implements OnInit {
 
   protected deleteSelectedUser(): void {
     if (!this.selectedUser) return;
+
+    if (!this.canDeleteUser(this.selectedUser)) {
+      this.deleteUserErrorMessage = '⚠️ No tienes permisos para eliminar este usuario.';
+      return;
+    }
 
     const userName = this.selectedUser.name;
 
@@ -504,6 +530,23 @@ export class UsersPanelComponent implements OnInit {
     );
   }
 
+  protected canEditSelectedUser(): boolean {
+    return !!this.selectedUser && this.canEditUser(this.selectedUser);
+  }
+
+  protected canDeleteSelectedUser(): boolean {
+    return !!this.selectedUser && this.canDeleteUser(this.selectedUser);
+  }
+
+  protected get availableRoleOptions(): RoleOption[] {
+    if (this.currentRole === 'manager') return this.roleOptions;
+    if (this.currentRole === 'administrador') {
+      return this.roleOptions.filter((role) => role.code === 'tecnico');
+    }
+
+    return [];
+  }
+
   /**
    * Genera el usuario con la primera letra del nombre y el primer apellido.
    *
@@ -595,12 +638,47 @@ export class UsersPanelComponent implements OnInit {
   }
 
   private mergeRoleOption(role: RoleOption): void {
-    if (!role.value || this.roleLabelMap.has(role.value)) return;
+    if (!role.value) return;
+
+    const existingIndex = this.roleOptions.findIndex((item) => item.value === role.value);
+
+    if (existingIndex >= 0) {
+      const existingRole = this.roleOptions[existingIndex];
+      this.roleOptions = this.roleOptions.map((item, index) =>
+        index === existingIndex
+          ? { ...existingRole, code: existingRole.code || role.code }
+          : item,
+      );
+      this.roleLabelMap.set(role.value, role.label);
+      return;
+    }
 
     this.roleOptions = [...this.roleOptions, role].sort((a, b) =>
       a.label.localeCompare(b.label),
     );
     this.roleLabelMap.set(role.value, role.label);
+  }
+
+  private canViewUser(user: UserRow): boolean {
+    if (this.currentRole === 'manager') return true;
+    if (this.currentRole === 'administrador') return user.roleCode !== 'manager';
+
+    return false;
+  }
+
+  private canEditUser(user: UserRow): boolean {
+    if (this.currentRole === 'manager') return true;
+    if (this.currentRole === 'administrador') return user.roleCode === 'tecnico';
+
+    return false;
+  }
+
+  private canDeleteUser(user: UserRow): boolean {
+    return this.canEditUser(user);
+  }
+
+  private get currentRole(): AuthRoleCode {
+    return this.authService.getCurrentRole();
   }
 
   private normalizeUsername(value: string): string {

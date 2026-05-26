@@ -4,18 +4,14 @@ const { LEGACY_ROLE_FALLBACKS } = require("../services/authUser.service");
 
 const ADMIN_ROLE_CODE = "administrador";
 const MANAGER_ROLE_CODE = "manager";
+const TECH_ROLE_CODE = "tecnico";
+const UNKNOWN_ROLE_CODE = "desconocido";
 
-const getManagerRole = async () => Rol.findOne({ codigo: MANAGER_ROLE_CODE, activo: true });
-const isManagerRoleId = (role, roleId) => Boolean(role && String(role._id) === String(roleId));
-const isManagerUser = async (user) => {
-  const managerRole = await getManagerRole();
-  return isManagerRoleId(managerRole, getUserRoleId(user));
-};
 const isAdminOrManager = (roleCode) =>
   roleCode === ADMIN_ROLE_CODE || roleCode === MANAGER_ROLE_CODE;
 
 const getUserRoleId = (user) => {
-  const populatedRoleId = user?.$__?.populated?.rol_id?.value;
+  const populatedRoleId = typeof user?.populated === "function" ? user.populated("rol_id") : null;
 
   if (populatedRoleId) {
     return String(populatedRoleId);
@@ -28,6 +24,31 @@ const getUserRoleId = (user) => {
   return user?.rol_id ? String(user.rol_id) : "";
 };
 
+const resolveRoleById = async (roleId) => {
+  const normalizedRoleId = String(roleId || "");
+  const fallbackRole = LEGACY_ROLE_FALLBACKS[normalizedRoleId];
+
+  try {
+    const role = await Rol.findById(normalizedRoleId);
+
+    if (role) {
+      return {
+        roleId: String(role._id),
+        roleCode: role.codigo,
+        roleName: role.nombre,
+      };
+    }
+  } catch (error) {
+    // Si el ObjectId no es valido, el fallback decide si es un rol historico conocido.
+  }
+
+  return {
+    roleId: normalizedRoleId,
+    roleCode: fallbackRole?.codigo || UNKNOWN_ROLE_CODE,
+    roleName: fallbackRole?.nombre || "Desconocido",
+  };
+};
+
 const getUserRolePayload = (user) => {
   const roleId = getUserRoleId(user);
   const populatedRole = user?.rol_id?.codigo ? user.rol_id : null;
@@ -35,9 +56,30 @@ const getUserRolePayload = (user) => {
 
   return {
     roleId,
-    roleCode: populatedRole?.codigo || fallbackRole?.codigo || "desconocido",
+    roleCode: populatedRole?.codigo || fallbackRole?.codigo || UNKNOWN_ROLE_CODE,
     roleName: populatedRole?.nombre || fallbackRole?.nombre || "Desconocido",
   };
+};
+
+const canViewUser = (requesterRoleCode, targetRoleCode) => {
+  if (requesterRoleCode === MANAGER_ROLE_CODE) return true;
+  if (requesterRoleCode === ADMIN_ROLE_CODE) return targetRoleCode !== MANAGER_ROLE_CODE;
+
+  return false;
+};
+
+const canModifyUser = (requesterRoleCode, targetRoleCode) => {
+  if (requesterRoleCode === MANAGER_ROLE_CODE) return true;
+  if (requesterRoleCode === ADMIN_ROLE_CODE) return targetRoleCode === TECH_ROLE_CODE;
+
+  return false;
+};
+
+const canAssignRole = (requesterRoleCode, targetRoleCode) => {
+  if (requesterRoleCode === MANAGER_ROLE_CODE) return true;
+  if (requesterRoleCode === ADMIN_ROLE_CODE) return targetRoleCode === TECH_ROLE_CODE;
+
+  return false;
 };
 
 const buildUserResponse = (user) => {
@@ -96,10 +138,14 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ error: "El rol es requerido" });
     }
 
-    const managerRole = await getManagerRole();
+    const requestedRole = await resolveRoleById(rol_id);
 
-    if (isManagerRoleId(managerRole, rol_id) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
-      return res.status(403).json({ error: "No tienes permisos para crear usuarios Manager" });
+    if (requestedRole.roleCode === UNKNOWN_ROLE_CODE) {
+      return res.status(400).json({ error: "El rol seleccionado no es válido" });
+    }
+
+    if (!canAssignRole(req.authUser?.roleCode, requestedRole.roleCode)) {
+      return res.status(403).json({ error: "Operación no permitida" });
     }
 
     const duplicateQuery = {
@@ -177,13 +223,15 @@ exports.createUser = async (req, res) => {
  */
 exports.getUsers = async (req, res) => {
   try {
+    if (!isAdminOrManager(req.authUser?.roleCode)) {
+      return res.status(403).json({ error: "Acceso restringido" });
+    }
+
     // El middleware pre('find') del modelo filtra automáticamente fecha_eliminacion: null
     const users = await Usuario.find({}, "-passwordHash").populate("rol_id", "codigo nombre");
-    const managerRole = await getManagerRole();
-    const visibleUsers =
-      req.authUser?.roleCode === MANAGER_ROLE_CODE || !managerRole
-        ? users
-        : users.filter((user) => !isManagerRoleId(managerRole, getUserRoleId(user)));
+    const visibleUsers = users.filter((user) =>
+      canViewUser(req.authUser.roleCode, getUserRolePayload(user).roleCode),
+    );
 
     res.status(200).json(visibleUsers.map(buildUserResponse));
   } catch (error) {
@@ -212,8 +260,8 @@ exports.getUserById = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
+    if (!canViewUser(req.authUser?.roleCode, getUserRolePayload(user).roleCode)) {
+      return res.status(403).json({ error: "Acceso restringido" });
     }
 
     res.status(200).json(buildUserResponse(user));
@@ -247,24 +295,28 @@ exports.updateUser = async (req, res) => {
       activo,
     } = req.body;
 
-    const user = await Usuario.findById(req.params.id);
+    const user = await Usuario.findById(req.params.id).populate("rol_id", "codigo nombre");
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
+    const targetRole = getUserRolePayload(user);
+
+    if (!canModifyUser(req.authUser?.roleCode, targetRole.roleCode)) {
       return res.status(403).json({ error: "No tienes permisos para modificar este usuario" });
     }
 
-    const managerRole = await getManagerRole();
+    if (rol_id !== undefined) {
+      const requestedRole = await resolveRoleById(rol_id);
 
-    if (
-      rol_id !== undefined
-      && isManagerRoleId(managerRole, rol_id)
-      && req.authUser?.roleCode !== MANAGER_ROLE_CODE
-    ) {
-      return res.status(403).json({ error: "No tienes permisos para asignar rol Manager" });
+      if (requestedRole.roleCode === UNKNOWN_ROLE_CODE) {
+        return res.status(400).json({ error: "El rol seleccionado no es válido" });
+      }
+
+      if (!canAssignRole(req.authUser?.roleCode, requestedRole.roleCode)) {
+        return res.status(403).json({ error: "Operación no permitida" });
+      }
     }
 
     // Validar duplicados si se va a actualizar username o email
@@ -377,10 +429,14 @@ exports.changeUserPassword = async (req, res) => {
       return res.status(400).json({ error: "La nueva contraseña es requerida" });
     }
 
-    const user = await Usuario.findById(userId);
+    const user = await Usuario.findById(userId).populate("rol_id", "codigo nombre");
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (!canModifyUser(req.authUser?.roleCode, getUserRolePayload(user).roleCode)) {
+      return res.status(403).json({ error: "No tienes permisos para modificar este usuario" });
     }
 
     if ((!canManagePasswords || currentPassword) && !user.comparePassword(currentPassword)) {
@@ -413,13 +469,13 @@ exports.changeUserPassword = async (req, res) => {
  */
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await Usuario.findById(req.params.id);
+    const user = await Usuario.findById(req.params.id).populate("rol_id", "codigo nombre");
 
     if (!user) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    if (await isManagerUser(user) && req.authUser?.roleCode !== MANAGER_ROLE_CODE) {
+    if (!canModifyUser(req.authUser?.roleCode, getUserRolePayload(user).roleCode)) {
       return res.status(403).json({ error: "No tienes permisos para eliminar este usuario" });
     }
 

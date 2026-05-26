@@ -50,7 +50,7 @@ router.get('/:id', requireAdminUser, userController.getUserById);
 
 /**
  * @name PUT /:id
- * @description Actualiza los datos generales de un usuario activo (incluyendo su contraseña).
+ * @description Actualiza los datos generales de un usuario activo.
  */
 router.put('/:id', requireAdminUser, userController.updateUser);
 

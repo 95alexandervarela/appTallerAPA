@@ -22,7 +22,7 @@
         pButton
         type="button"
         class="edit-user-button"
-        [disabled]="!selectedUser"
+        [disabled]="!canEditSelectedUser()"
         (click)="openEditUserDialog()"
       >
         <i class="pi pi-user-edit" aria-hidden="true"></i>
@@ -33,7 +33,7 @@
         pButton
         type="button"
         class="delete-user-button"
-        [disabled]="!selectedUser"
+        [disabled]="!canDeleteSelectedUser()"
         (click)="openDeleteUserDialog()"
       >
         <i class="pi pi-trash" aria-hidden="true"></i>
@@ -182,7 +182,7 @@
           <span>Rol</span>
           <p-select
             name="role"
-            [options]="roleOptions"
+            [options]="availableRoleOptions"
             optionLabel="label"
             optionValue="value"
             [(ngModel)]="createUserForm.role"
@@ -368,7 +368,7 @@
           <span>Rol</span>
           <p-select
             name="editRole"
-            [options]="roleOptions"
+            [options]="availableRoleOptions"
             optionLabel="label"
             optionValue="value"
             [(ngModel)]="editUserForm.role"
