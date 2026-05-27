@@ -152,6 +152,27 @@
   color: #ffffff !important;
 }
 
+.modal-sidebar .ticket-detail-actions .quick-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.modal-sidebar .ticket-detail-actions .quick-action-button span,
+.modal-sidebar .ticket-detail-actions .quick-action-button i {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.modal-sidebar .ticket-detail-actions .quick-action-button span {
+  flex: 0 0 auto;
+}
+
 .ticket-list {
   display: grid;
 }
