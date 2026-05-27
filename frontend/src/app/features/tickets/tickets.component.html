@@ -52,7 +52,14 @@
               <span>{{ ticket.numeroCaso }}</span>
               <strong>{{ ticket.cliente }}</strong>
               <em>{{ ticket.equipo }}</em>
-              <span [class]="ticket.estadoClassName">{{ ticket.estado }}</span>
+              <span
+                [class]="ticket.estadoClassName"
+                [style.background]="ticket.estadoBackground"
+                [style.border-color]="ticket.estadoBorderColor"
+                [style.color]="ticket.estadoTextColor"
+              >
+                {{ ticket.estado }}
+              </span>
             </button>
           } @empty {
             <div class="empty-row">No hay tickets para mostrar.</div>
@@ -446,6 +453,9 @@
                   (ngModelChange)="updateSelectedTicketStatus($event)"
                   [disabled]="isUpdatingStatus"
                   [class]="selectedTicket.estadoClassName + ' status-native-select'"
+                  [style.background]="selectedTicket.estadoBackground"
+                  [style.border-color]="selectedTicket.estadoBorderColor"
+                  [style.color]="selectedTicket.estadoTextColor"
                   aria-label="Estado del ticket"
                 >
                   @for (status of statusOptionsForCurrentUser; track status.value) {
@@ -461,7 +471,14 @@
                   <small class="status-inline-error">{{ statusUpdateErrorMessage }}</small>
                 }
               } @else {
-                <span [class]="selectedTicket.estadoClassName">{{ selectedTicket.estado }}</span>
+                <span
+                  [class]="selectedTicket.estadoClassName"
+                  [style.background]="selectedTicket.estadoBackground"
+                  [style.border-color]="selectedTicket.estadoBorderColor"
+                  [style.color]="selectedTicket.estadoTextColor"
+                >
+                  {{ selectedTicket.estado }}
+                </span>
               }
             </div>
             <div>

@@ -1,0 +1,234 @@
+.status-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.status-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.status-header span,
+.status-header p,
+.status-row-head span,
+.status-row > span,
+.status-row code {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.status-header h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+}
+
+.status-header p {
+  margin: 0;
+}
+
+.status-header-actions,
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.create-status-button,
+.refresh-status-button,
+.status-icon-button,
+.save-status-button,
+.cancel-status-button,
+.delete-status-button {
+  gap: 8px;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+}
+
+.create-status-button,
+.save-status-button {
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(14, 165, 233, 0.34) !important;
+  box-shadow: 0 14px 34px rgba(14, 165, 233, 0.16);
+}
+
+.refresh-status-button,
+.cancel-status-button,
+.status-icon-button {
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.delete-status-button,
+.status-icon-button.delete {
+  border: 1px solid rgba(248, 113, 113, 0.24) !important;
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+.status-icon-button {
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+.status-table {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.8fr) 76px 88px 78px 138px;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.status-row:last-child {
+  border-bottom: 0;
+}
+
+.status-row-head {
+  min-height: 42px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-row-message {
+  grid-template-columns: 1fr;
+}
+
+.status-badge--configured {
+  justify-self: start;
+}
+
+:host ::ng-deep .status-row .p-tag {
+  width: 78px;
+  height: 28px;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+:host ::ng-deep .status-dialog {
+  width: min(720px, calc(100vw - 32px));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(30, 41, 88, 0.72);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
+  color: #ffffff;
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+:host ::ng-deep .status-dialog .p-dialog-header,
+:host ::ng-deep .status-dialog .p-dialog-content {
+  background: transparent;
+  color: #ffffff;
+}
+
+:host ::ng-deep .status-dialog .p-dialog-header {
+  padding: 20px 22px 10px;
+}
+
+:host ::ng-deep .status-dialog .p-dialog-content {
+  padding: 0 22px 22px;
+}
+
+:host ::ng-deep .status-dialog .p-dialog-close-button {
+  color: #ffffff;
+}
+
+:host ::ng-deep .status-dialog-mask {
+  backdrop-filter: blur(8px);
+}
+
+.status-form,
+.delete-status-content {
+  display: grid;
+  gap: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.form-grid span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.checkbox-field {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-grid input:not([type='checkbox']) {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.form-grid small,
+.form-error {
+  color: #fecaca;
+}
+
+.form-error {
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.delete-status-content > i {
+  color: #fca5a5;
+  font-size: 1.7rem;
+}
+
+.delete-status-content p,
+.delete-status-content small {
+  margin: 0;
+}
+
+.delete-status-content small {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 920px) {
+  .status-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 14px 16px;
+  }
+
+  .status-row-head {
+    display: none;
+  }
+
+  .status-header {
+    flex-direction: column;
+  }
+}

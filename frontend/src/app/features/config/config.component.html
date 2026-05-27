@@ -25,6 +25,8 @@
     <section class="config-content-panel">
       @if (selectedKey === 'usuarios') {
         <app-users-panel />
+      } @else if (selectedKey === 'estados') {
+        <app-ticket-status-panel />
       } @else {
         <div class="config-placeholder">
           <i [class]="selectedOption.icon" aria-hidden="true"></i>

@@ -18,6 +18,9 @@ export interface RepuestosTicketContext {
   tecnicoAsignadoNombre: string;
   estado: string;
   estadoClassName?: string;
+  estadoBackground?: string;
+  estadoBorderColor?: string;
+  estadoTextColor?: string;
 }
 
 interface SelectOption {

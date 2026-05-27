@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TagModule } from 'primeng/tag';
 import { ConfigMenuComponent } from './config-menu.component';
 import { ConfigOption } from './config.types';
+import { TicketStatusPanelComponent } from './ticket-status-panel.component';
 import { UsersPanelComponent } from './users-panel.component';
 
 /**
@@ -13,7 +14,7 @@ import { UsersPanelComponent } from './users-panel.component';
  */
 @Component({
   selector: 'app-config',
-  imports: [ConfigMenuComponent, TagModule, UsersPanelComponent],
+  imports: [ConfigMenuComponent, TagModule, UsersPanelComponent, TicketStatusPanelComponent],
   templateUrl: './config.component.html',
   styleUrl: './config.component.scss'
 })
@@ -24,7 +25,8 @@ export class ConfigComponent {
     { key: 'apariencia', label: 'Apariencia', icon: 'pi pi-palette' },
     { key: 'accesibilidad', label: 'Accesibilidad', icon: 'pi pi-eye' },
     { key: 'notificaciones', label: 'Notificaciones', icon: 'pi pi-bell' },
-    { key: 'usuarios', label: 'Usuarios', icon: 'pi pi-users' }
+    { key: 'usuarios', label: 'Usuarios', icon: 'pi pi-users' },
+    { key: 'estados', label: 'Estados', icon: 'pi pi-flag' }
   ];
 
   protected selectedKey = 'usuarios';

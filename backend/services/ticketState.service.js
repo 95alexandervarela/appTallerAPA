@@ -1,5 +1,10 @@
 const Ticket = require('../models/ticket.model');
 const TicketStatusHistory = require('../models/ticketStatusHistory.model');
+const {
+  getStatusByCode,
+  isFinalStatus: isConfiguredFinalStatus,
+  normalizeStatusCode,
+} = require('./ticketStatus.service');
 
 const FINAL_TICKET_STATUSES = Object.freeze(new Set([
   'cerrado',
@@ -81,15 +86,25 @@ const allowedTransitions = Object.freeze({
 });
 
 function normalizeTicketStatus(status) {
-  return typeof status === 'string' ? status.trim().toLowerCase() : '';
+  return normalizeStatusCode(status);
 }
 
 function isFinalTicketStatus(status) {
   return FINAL_TICKET_STATUSES.has(normalizeTicketStatus(status));
 }
 
-function assertTicketIsNotFinalized(currentStatus) {
-  if (isFinalTicketStatus(currentStatus)) {
+async function isFinalTicketStatusResolved(status) {
+  const configuredStatus = await getStatusByCode(status);
+
+  if (configuredStatus) {
+    return Boolean(configuredStatus.isFinal);
+  }
+
+  return isFinalTicketStatus(status);
+}
+
+async function assertTicketIsNotFinalized(currentStatus) {
+  if (await isFinalTicketStatusResolved(currentStatus)) {
     throw new Error('El ticket ya está cerrado o finalizado y no puede cambiarse');
   }
 }
@@ -131,7 +146,7 @@ async function applyTicketState(ticketId, action, options = {}) {
   const previousStatus = ticket.estadoTicket;
 
   if (options.blockFinalStatusChange) {
-    assertTicketIsNotFinalized(previousStatus);
+    await assertTicketIsNotFinalized(previousStatus);
   }
 
   assertTransitionAllowed(previousStatus, estadoTicket, options);
@@ -166,5 +181,6 @@ module.exports = {
   allowedTransitions,
   assertTicketIsNotFinalized,
   isFinalTicketStatus,
+  isFinalTicketStatusResolved,
   applyTicketState
 };

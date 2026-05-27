@@ -9,6 +9,7 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { RecepcionEquipoService } from '../../core/services/recepcion-equipo.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TicketStatusConfig, TicketStatusService } from '../../core/services/ticket-status.service';
 import { TechnicianOption, TicketComment, TicketsService } from '../../core/services/tickets.service';
 import {
   TICKET_STATUS_CATALOG,
@@ -42,6 +43,9 @@ interface TicketResumen {
   estado: string;
   estadoCodigo: string;
   estadoClassName: string;
+  estadoBackground: string;
+  estadoBorderColor: string;
+  estadoTextColor: string;
   prioridad: string;
   fechaCreacion: string;
 }
@@ -146,12 +150,13 @@ export class TicketsComponent implements OnInit {
     { label: 'Urgente', value: 'urgente' },
   ];
 
-  protected readonly ticketStatusOptions: SelectOption[] = Object.values(TICKET_STATUS_CATALOG)
+  protected ticketStatusOptions: SelectOption[] = Object.values(TICKET_STATUS_CATALOG)
     .sort((firstStatus, secondStatus) => firstStatus.order - secondStatus.order)
     .map((status) => ({
       label: status.label,
       value: status.code,
     }));
+  private ticketStatusMap = new Map<string, TicketStatusConfig>();
 
   protected tickets: TicketResumen[] = [];
   protected technicianOptions: SelectOption[] = [];
@@ -163,6 +168,7 @@ export class TicketsComponent implements OnInit {
     private route: ActivatedRoute,
     private recepcionEquipoService: RecepcionEquipoService,
     private ticketsService: TicketsService,
+    private ticketStatusService: TicketStatusService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -170,6 +176,7 @@ export class TicketsComponent implements OnInit {
   ngOnInit(): void {
     this.watchStatusFilter();
     this.loadUsuarioTemporal();
+    this.loadTicketStatuses();
     this.loadTechnicians();
     this.loadTickets();
   }
@@ -337,29 +344,7 @@ export class TicketsComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.ticketSuccessMessage = `Ticket ${response.ticket.numeroTicket} creado con éxito.`;
-          this.tickets = [
-            ...this.tickets,
-            {
-              id: response.ticket._id,
-              numeroCaso: response.ticket.numeroTicket,
-              cliente: response.ticket.nombreCliente,
-              telefonoCliente: response.ticket.telefonoCliente || '',
-              equipo: response.ticket.tipoEquipo,
-              marcaEquipo: response.ticket.marcaEquipo || '',
-              modeloEquipo: response.ticket.modeloEquipo || '',
-              serieEquipo: response.ticket.serieEquipo || '',
-              fallaReportada: response.ticket.fallaReportada || '',
-              condicionFisica: response.ticket.condicionFisica || '',
-              accesoriosEntregados: response.ticket.accesoriosEntregados || [],
-              tecnicoAsignadoId: this.getTechnicianId(response.ticket.tecnicoAsignado),
-              tecnicoAsignadoNombre: this.getTechnicianName(response.ticket.tecnicoAsignado),
-              estado: getTicketStatusLabel(response.ticket.estadoTicket),
-              estadoCodigo: response.ticket.estadoTicket,
-              estadoClassName: getTicketStatusClassName(response.ticket.estadoTicket),
-              prioridad: response.ticket.prioridad,
-              fechaCreacion: response.ticket.fechaCreacion || '',
-            },
-          ];
+          this.tickets = [...this.tickets, this.mapTicketResponse(response.ticket)];
           this.isTicketSuccessDialogOpen = true;
           this.cdr.detectChanges();
         },
@@ -670,6 +655,32 @@ export class TicketsComponent implements OnInit {
     });
   }
 
+  private loadTicketStatuses(): void {
+    this.ticketStatusService.getActiveStatuses().subscribe({
+      next: (statuses) => {
+        const activeStatuses = statuses.filter((status) => status.isActive !== false);
+
+        if (activeStatuses.length) {
+          this.ticketStatusMap = new Map(activeStatuses.map((status) => [status.code, status]));
+          this.ticketStatusOptions = activeStatuses
+            .sort((firstStatus, secondStatus) => firstStatus.order - secondStatus.order)
+            .map((status) => ({
+              label: status.name,
+              value: status.code,
+            }));
+          this.tickets = this.tickets.map((ticket) => ({
+            ...ticket,
+            ...this.getStatusPresentation(ticket.estadoCodigo),
+          }));
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {
+        this.ticketStatusMap = new Map();
+      },
+    });
+  }
+
   private loadTicketComments(ticketId: string): void {
     this.isLoadingTicketComments = true;
     this.ticketCommentErrorMessage = '';
@@ -715,6 +726,8 @@ export class TicketsComponent implements OnInit {
   }
 
   private mapTicketResponse(ticket: any): TicketResumen {
+    const statusPresentation = this.getStatusPresentation(ticket.estadoTicket);
+
     return {
       id: ticket._id,
       numeroCaso: ticket.numeroTicket,
@@ -729,12 +742,45 @@ export class TicketsComponent implements OnInit {
       accesoriosEntregados: ticket.accesoriosEntregados || [],
       tecnicoAsignadoId: this.getTechnicianId(ticket.tecnicoAsignado),
       tecnicoAsignadoNombre: this.getTechnicianName(ticket.tecnicoAsignado),
-      estado: getTicketStatusLabel(ticket.estadoTicket),
+      estado: statusPresentation.estado,
       estadoCodigo: ticket.estadoTicket,
-      estadoClassName: getTicketStatusClassName(ticket.estadoTicket),
+      estadoClassName: statusPresentation.estadoClassName,
+      estadoBackground: statusPresentation.estadoBackground,
+      estadoBorderColor: statusPresentation.estadoBorderColor,
+      estadoTextColor: statusPresentation.estadoTextColor,
       prioridad: ticket.prioridad,
       fechaCreacion: ticket.fechaCreacion || '',
     };
+  }
+
+  private getStatusPresentation(statusCode: string): Pick<
+    TicketResumen,
+    'estado' | 'estadoClassName' | 'estadoBackground' | 'estadoBorderColor' | 'estadoTextColor'
+  > {
+    const configuredStatus = this.ticketStatusMap.get(statusCode);
+
+    if (configuredStatus && !configuredStatus.isLegacy) {
+      return {
+        estado: configuredStatus.name,
+        estadoClassName: 'status-badge status-badge--configured',
+        estadoBackground: this.withAlpha(configuredStatus.color, '29'),
+        estadoBorderColor: this.withAlpha(configuredStatus.color, '47'),
+        estadoTextColor: '#e2e8f0',
+      };
+    }
+
+    return {
+      estado: configuredStatus?.name || getTicketStatusLabel(statusCode),
+      estadoClassName: getTicketStatusClassName(statusCode),
+      estadoBackground: '',
+      estadoBorderColor: '',
+      estadoTextColor: '',
+    };
+  }
+
+  private withAlpha(color: string, alphaHex: string): string {
+    const value = color.trim();
+    return /^#[0-9a-f]{6}$/i.test(value) ? `${value}${alphaHex}` : value;
   }
 
   private getTechnicianId(value: TechnicianOption | string | null | undefined): string {

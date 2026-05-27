@@ -14,6 +14,7 @@ const gestionRepuestoRoutes = require("./routes/gestionRepuesto.routes");
 const reparacionEquipoRoutes = require("./routes/reparacionEquipo.routes");
 const cobroFacturacionRoutes = require("./routes/cobroFacturacion.routes");
 const entregaEquipoRoutes = require("./routes/entregaEquipo.routes");
+const configStatusRoutes = require("./routes/configStatus.routes");
 
 /**
  * Punto de entrada principal para el Servidor del Help Desk (Taller APA).
@@ -78,6 +79,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api/config/statuses", configStatusRoutes);
 app.use("/api/recepciones-equipo", recepcionEquipoRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/diagnosticos-tecnicos", diagnosticoTecnicoRoutes);

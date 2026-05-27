@@ -1,0 +1,228 @@
+<section class="status-panel">
+  <header class="status-header">
+    <div>
+      <span>Estados</span>
+      <h2>Estados de tickets</h2>
+      <p>Administra el catalogo visible del flujo sin romper estados legacy.</p>
+    </div>
+
+    <div class="status-header-actions">
+      <button
+        pButton
+        type="button"
+        class="refresh-status-button"
+        [disabled]="isLoadingStatuses"
+        (click)="loadStatuses()"
+      >
+        <i class="pi pi-refresh" aria-hidden="true"></i>
+        <span pButtonLabel>Recargar</span>
+      </button>
+
+      <button pButton type="button" class="create-status-button" (click)="openCreateStatusDialog()">
+        <i class="pi pi-plus-circle" aria-hidden="true"></i>
+        <span pButtonLabel>Crear estado</span>
+      </button>
+    </div>
+  </header>
+
+  @if (statusErrorMessage) {
+    <p class="form-error">{{ statusErrorMessage }}</p>
+  }
+
+  <section class="status-table" aria-label="Estados configurables">
+    <div class="status-row status-row-head">
+      <span>Nombre</span>
+      <span>Codigo</span>
+      <span>Orden</span>
+      <span>Activo</span>
+      <span>Final</span>
+      <span>Acciones</span>
+    </div>
+
+    @if (isLoadingStatuses && !statuses.length) {
+      <div class="status-row status-row-message">
+        <span>Cargando estados...</span>
+      </div>
+    }
+
+    @for (status of statuses; track status._id) {
+      <div class="status-row">
+        <span
+          class="status-badge status-badge--configured"
+          [style.background]="getBadgeStyle(status).background"
+          [style.border-color]="getBadgeStyle(status).borderColor"
+          [style.color]="getBadgeStyle(status).color"
+        >
+          {{ status.name }}
+        </span>
+        <code>{{ status.code }}</code>
+        <span>{{ status.order }}</span>
+        <p-tag [value]="status.isActive ? 'Activo' : 'Inactivo'" [severity]="status.isActive ? 'success' : 'warn'" />
+        <p-tag [value]="status.isFinal ? 'Si' : 'No'" [severity]="status.isFinal ? 'info' : 'secondary'" />
+        <div class="status-actions">
+          <button
+            pButton
+            type="button"
+            class="status-icon-button"
+            (click)="openEditStatusDialog(status)"
+            aria-label="Editar estado"
+          >
+            <i class="pi pi-pencil" aria-hidden="true"></i>
+          </button>
+          <button
+            pButton
+            type="button"
+            class="status-icon-button"
+            (click)="toggleStatusActive(status)"
+            aria-label="Activar o desactivar estado"
+          >
+            <i [class]="status.isActive ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+          </button>
+          <button
+            pButton
+            type="button"
+            class="status-icon-button delete"
+            (click)="openDeleteStatusDialog(status)"
+            aria-label="Eliminar estado"
+          >
+            <i class="pi pi-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    } @empty {
+      @if (!isLoadingStatuses) {
+        <div class="status-row status-row-message">
+          <span>No hay estados configurados.</span>
+        </div>
+      }
+    }
+  </section>
+
+  <p-dialog
+    [header]="selectedStatus ? 'Editar estado' : 'Crear estado'"
+    styleClass="status-dialog"
+    maskStyleClass="status-dialog-mask"
+    [(visible)]="isStatusDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    (onHide)="closeStatusDialog()"
+  >
+    <form class="status-form" (ngSubmit)="saveStatus()" novalidate>
+      <div class="form-grid">
+        <label>
+          <span>Nombre</span>
+          <input
+            pInputText
+            type="text"
+            name="name"
+            [(ngModel)]="statusForm.name"
+            (ngModelChange)="onNameChange()"
+          />
+          @if (submitted && !statusForm.name.trim()) {
+            <small>Nombre es requerido.</small>
+          }
+        </label>
+
+        <label>
+          <span>Codigo</span>
+          <input pInputText type="text" name="code" [(ngModel)]="statusForm.code" />
+        </label>
+
+        <label>
+          <span>Color</span>
+          <input pInputText type="text" name="color" [(ngModel)]="statusForm.color" />
+        </label>
+
+        <label>
+          <span>Orden</span>
+          <input pInputText type="number" name="order" [(ngModel)]="statusForm.order" />
+        </label>
+
+        <label class="form-field-wide">
+          <span>Descripcion</span>
+          <input pInputText type="text" name="description" [(ngModel)]="statusForm.description" />
+        </label>
+
+        <label class="checkbox-field">
+          <input type="checkbox" name="isActive" [(ngModel)]="statusForm.isActive" />
+          <span>Activo</span>
+        </label>
+
+        <label class="checkbox-field">
+          <input type="checkbox" name="isFinal" [(ngModel)]="statusForm.isFinal" />
+          <span>Estado final</span>
+        </label>
+      </div>
+
+      @if (statusErrorMessage) {
+        <p class="form-error">{{ statusErrorMessage }}</p>
+      }
+
+      <footer class="form-actions">
+        <button
+          pButton
+          type="button"
+          class="cancel-status-button"
+          [disabled]="isSavingStatus"
+          (click)="closeStatusDialog()"
+        >
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button
+          pButton
+          type="submit"
+          class="save-status-button"
+          [loading]="isSavingStatus"
+          [disabled]="isSavingStatus"
+        >
+          <span pButtonLabel>Guardar</span>
+        </button>
+      </footer>
+    </form>
+  </p-dialog>
+
+  <p-dialog
+    header="Eliminar estado"
+    styleClass="status-dialog status-delete-dialog"
+    maskStyleClass="status-dialog-mask"
+    [(visible)]="isDeleteDialogOpen"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    (onHide)="closeDeleteStatusDialog()"
+  >
+    <div class="delete-status-content">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <p>¿Deseas eliminar el estado <strong>{{ selectedStatus?.name }}</strong>?</p>
+      <small>Se aplicara soft delete y los tickets legacy no se romperan.</small>
+
+      @if (statusErrorMessage) {
+        <p class="form-error">{{ statusErrorMessage }}</p>
+      }
+
+      <footer class="form-actions">
+        <button
+          pButton
+          type="button"
+          class="cancel-status-button"
+          [disabled]="isDeletingStatus"
+          (click)="closeDeleteStatusDialog()"
+        >
+          <span pButtonLabel>Cancelar</span>
+        </button>
+        <button
+          pButton
+          type="button"
+          class="delete-status-button"
+          [loading]="isDeletingStatus"
+          [disabled]="isDeletingStatus"
+          (click)="deleteStatus()"
+        >
+          <span pButtonLabel>Eliminar</span>
+        </button>
+      </footer>
+    </div>
+  </p-dialog>
+</section>
