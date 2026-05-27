@@ -46,7 +46,7 @@
     }
 
     @for (status of statuses; track status._id) {
-      <div class="status-row">
+      <div class="status-row" [class.is-inactive]="!status.isActive">
         <span
           class="status-badge status-badge--configured"
           [style.background]="getBadgeStyle(status).background"
@@ -57,7 +57,10 @@
         </span>
         <code>{{ status.code }}</code>
         <span>{{ status.order }}</span>
-        <p-tag [value]="status.isActive ? 'Activo' : 'Inactivo'" [severity]="status.isActive ? 'success' : 'warn'" />
+        <p-tag
+          [value]="status.isActive ? 'Activo' : 'Inactivo'"
+          [severity]="status.isActive ? 'success' : 'secondary'"
+        />
         <p-tag [value]="status.isFinal ? 'Si' : 'No'" [severity]="status.isFinal ? 'info' : 'secondary'" />
         <div class="status-actions">
           <button

@@ -89,6 +89,14 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.status-row.is-inactive {
+  opacity: 0.7;
+}
+
+.status-row.is-inactive .status-badge--configured {
+  text-decoration: line-through;
+}
+
 .status-row:last-child {
   border-bottom: 0;
 }

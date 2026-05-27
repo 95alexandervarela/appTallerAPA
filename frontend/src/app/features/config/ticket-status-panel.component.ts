@@ -246,10 +246,14 @@ export class TicketStatusPanelComponent implements OnInit {
   }
 
   protected getBadgeStyle(status: TicketStatusConfig): BadgeStyle {
+    const backgroundAlpha = status.isActive ? '29' : '1a';
+    const borderAlpha = status.isActive ? '47' : '26';
+    const textColor = status.isActive ? '#e2e8f0' : '#cbd5e1';
+
     return {
-      background: this.withAlpha(status.color, '29'),
-      borderColor: this.withAlpha(status.color, '47'),
-      color: '#e2e8f0',
+      background: this.withAlpha(status.color, backgroundAlpha),
+      borderColor: this.withAlpha(status.color, borderAlpha),
+      color: textColor,
     };
   }
 

@@ -45,7 +45,7 @@ export class TicketStatusService {
   constructor(private http: HttpClient) {}
 
   getStatuses(): Observable<TicketStatusConfig[]> {
-    return this.http.get<TicketStatusConfig[]>(`${this.apiUrl}/active`);
+    return this.http.get<TicketStatusConfig[]>(this.apiUrl);
   }
 
   getActiveStatuses(): Observable<TicketStatusConfig[]> {
