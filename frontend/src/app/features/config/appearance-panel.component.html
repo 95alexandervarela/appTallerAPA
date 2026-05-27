@@ -1,0 +1,36 @@
+<section class="appearance-panel">
+  <header class="appearance-header">
+    <div>
+      <span>Apariencia</span>
+      <h2>Icono de perfil</h2>
+      <p>Selecciona un icono local para identificar tu perfil en el sistema.</p>
+    </div>
+
+    <button pButton type="button" class="refresh-icons-button" (click)="loadIcons()">
+      <i class="pi pi-refresh" aria-hidden="true"></i>
+      <span pButtonLabel>Actualizar iconos</span>
+    </button>
+  </header>
+
+  @if (isLoading) {
+    <div class="appearance-empty">Cargando iconos...</div>
+  } @else if (errorMessage) {
+    <div class="appearance-empty">{{ errorMessage }}</div>
+  } @else if (icons.length) {
+    <div class="icon-grid">
+      @for (icon of icons; track trackByIcon($index, icon)) {
+        <button
+          type="button"
+          class="icon-card"
+          [class.is-selected]="isSelected(icon)"
+          (click)="selectIcon(icon)"
+        >
+          <img [src]="icon.url" [alt]="icon.name" />
+          <span>{{ icon.name }}</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="appearance-empty">No hay iconos disponibles</div>
+  }
+</section>

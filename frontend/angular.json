@@ -33,6 +33,11 @@
                 "glob": "**/*",
                 "input": "imagenes",
                 "output": "/imagenes"
+              },
+              {
+                "glob": "**/*",
+                "input": "imagenes/iconosPerfil",
+                "output": "/assets/iconosPerfil"
               }
             ],
             "styles": [

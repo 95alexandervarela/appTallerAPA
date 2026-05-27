@@ -6,6 +6,9 @@
     </div>
     <div class="header-right">
       <p-tag value="Panel de gestion de usuarios" severity="info" />
+      @if (selectedIconUrl) {
+        <img [src]="selectedIconUrl" alt="Icono de perfil seleccionado" class="profile-icon-preview" />
+      }
       <img src="/imagenes/iconos/emusLogo.png" alt="Logo EMUS" class="emus-logo" />
     </div>
   </header>
@@ -16,7 +19,7 @@
       <h2>Configuracion</h2>
 
       <app-config-menu
-        [options]="options"
+        [options]="visibleOptions"
         [selectedKey]="selectedKey"
         (selectedKeyChange)="selectOption($event)"
       />
@@ -27,6 +30,8 @@
         <app-users-panel />
       } @else if (selectedKey === 'estados') {
         <app-ticket-status-panel />
+      } @else if (selectedKey === 'apariencia') {
+        <app-appearance-panel />
       } @else {
         <div class="config-placeholder">
           <i [class]="selectedOption.icon" aria-hidden="true"></i>
