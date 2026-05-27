@@ -49,11 +49,12 @@ function assertValidStatusPayload(payload) {
  * Estados activos para dropdowns del flujo de tickets.
  *
  * @remarks
- * Todos los usuarios autenticados pueden leerlos. Si no hay configuracion en
- * MongoDB, el servicio devuelve el catalogo legacy como fallback.
+ * Lectura publica para dropdowns y panel de Configuracion. Si no hay
+ * configuracion en MongoDB, devuelve el catalogo legacy como fallback.
  */
-router.get('/active', requireAuthContext, async (req, res) => {
+router.get('/active', async (req, res) => {
   try {
+    console.log('GET /api/config/statuses/active hit');
     const statuses = await getActiveStatuses();
     res.status(200).json(statuses);
   } catch (error) {
