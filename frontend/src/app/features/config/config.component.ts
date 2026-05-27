@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TagModule } from 'primeng/tag';
 import { ConfigMenuComponent } from './config-menu.component';
 import { ConfigOption } from './config.types';
@@ -18,7 +19,7 @@ import { UsersPanelComponent } from './users-panel.component';
   templateUrl: './config.component.html',
   styleUrl: './config.component.scss'
 })
-export class ConfigComponent {
+export class ConfigComponent implements OnInit {
   protected readonly options: ConfigOption[] = [
     { key: 'perfil', label: 'Perfil', icon: 'pi pi-id-card' },
     { key: 'cuenta', label: 'Cuenta', icon: 'pi pi-shield' },
@@ -31,7 +32,25 @@ export class ConfigComponent {
 
   protected selectedKey = 'usuarios';
 
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
+
+  ngOnInit(): void {
+    this.route.url.subscribe((segments) => {
+      const section = segments[0]?.path || 'usuarios';
+      this.selectedKey = this.options.some((option) => option.key === section)
+        ? section
+        : 'usuarios';
+    });
+  }
+
   protected get selectedOption(): ConfigOption {
     return this.options.find((option) => option.key === this.selectedKey) ?? this.options[0];
+  }
+
+  protected selectOption(key: string): void {
+    this.router.navigate(['/config', key]);
   }
 }

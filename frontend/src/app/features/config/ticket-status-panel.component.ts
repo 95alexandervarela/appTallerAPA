@@ -22,6 +22,12 @@ interface StatusForm {
   order: number;
 }
 
+interface BadgeStyle {
+  background: string;
+  borderColor: string;
+  color: string;
+}
+
 /**
  * Panel administrativo de estados configurables.
  *
@@ -72,12 +78,13 @@ export class TicketStatusPanelComponent implements OnInit {
       )
       .subscribe({
         next: (statuses) => {
+          console.log('statuses response', statuses);
           this.statuses = statuses;
         },
         error: (error) => {
+          console.error('ticket statuses load error', error);
           this.statuses = [];
-          this.statusErrorMessage =
-            error.error?.error || error.message || 'No se pudieron cargar los estados.';
+          this.statusErrorMessage = this.getStatusesLoadErrorMessage(error);
         },
       });
   }
@@ -238,7 +245,7 @@ export class TicketStatusPanelComponent implements OnInit {
     this.statusForm.code = this.slugify(this.statusForm.name);
   }
 
-  protected getBadgeStyle(status: TicketStatusConfig): Record<string, string> {
+  protected getBadgeStyle(status: TicketStatusConfig): BadgeStyle {
     return {
       background: this.withAlpha(status.color, '29'),
       borderColor: this.withAlpha(status.color, '47'),
@@ -284,5 +291,12 @@ export class TicketStatusPanelComponent implements OnInit {
   private withAlpha(color: string, alphaHex: string): string {
     const value = color.trim();
     return /^#[0-9a-f]{6}$/i.test(value) ? `${value}${alphaHex}` : value;
+  }
+
+  private getStatusesLoadErrorMessage(error: any): string {
+    if (error?.status === 404) return 'Error cargando estados: endpoint no disponible.';
+    if (error?.status === 500) return 'Error cargando estados: error del servidor.';
+    if (error?.status === 0) return 'Error cargando estados: no hay conexion con el backend.';
+    return 'Error cargando estados.';
   }
 }

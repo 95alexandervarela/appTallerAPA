@@ -69,6 +69,19 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        redirectTo: 'usuarios'
+      },
+      {
+        path: 'usuarios',
+        component: ConfigComponent
+      },
+      {
+        path: 'estados',
+        component: ConfigComponent
+      },
+      {
+        path: ':section',
         component: ConfigComponent
       }
     ]
