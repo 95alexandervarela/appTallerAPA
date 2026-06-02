@@ -7,6 +7,7 @@ const Usuario = require('../models/user.model');
 const Rol = require('../models/role.model');
 const { requireAuthContext, requireRole } = require('../middleware/authContext.middleware');
 const { TicketStateAction, applyTicketState } = require('../services/ticketState.service');
+const { createTicketAssignedNotification } = require('../services/notification.service');
 
 const LEGACY_TECNICO_ROLE_ID = '6a126c9296a6e0cb6e9df8a4';
 
@@ -373,6 +374,8 @@ router.put(
       return res.status(404).json({ error: 'Tecnico no encontrado o no activo' });
     }
 
+    const previousTechnicianId = ticket.tecnicoAsignado ? String(ticket.tecnicoAsignado) : '';
+    const shouldNotifyTechnician = previousTechnicianId !== String(tecnico._id);
     const shouldMarkAssigned = ticket.estadoTicket === 'creado';
     ticket.tecnicoAsignado = tecnico._id;
     ticket.observacionesAsignacion = observacionesAsignacion || ticket.observacionesAsignacion;
@@ -384,6 +387,14 @@ router.put(
       await applyTicketState(ticket._id, TicketStateAction.TECNICO_ASIGNADO, {
         changedBy: req.authUser.id,
         comment: 'Tecnico asignado al ticket'
+      });
+    }
+
+    if (shouldNotifyTechnician) {
+      await createTicketAssignedNotification({
+        ticket,
+        assignedTo: tecnico,
+        assignedBy: req.authUser,
       });
     }
 

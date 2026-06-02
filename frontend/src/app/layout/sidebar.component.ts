@@ -1,8 +1,10 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
+import { Subscription, interval } from 'rxjs';
 import { AuthService, AuthUser } from '../core/services/auth.service';
+import { NotificationsService, TicketNotification } from '../core/services/notifications.service';
 
 /**
  * Sidebar vertical inspirado en el patron de navegacion de Zoho Desk.
@@ -18,8 +20,14 @@ import { AuthService, AuthUser } from '../core/services/auth.service';
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit, OnDestroy {
   protected isUserPopoverOpen = false;
+  protected isNotificationsPopoverOpen = false;
+  protected unreadNotifications = 0;
+  protected notifications: TicketNotification[] = [];
+  protected isLoadingNotifications = false;
+
+  private readonly subscriptions = new Subscription();
 
   private readonly allMenuItems: MenuItem[] = [
     {
@@ -57,11 +65,25 @@ export class SidebarComponent {
 
   constructor(
     private authService: AuthService,
+    private notificationsService: NotificationsService,
     private router: Router,
   ) {}
 
+  ngOnInit(): void {
+    this.loadNotificationSummary();
+    this.subscriptions.add(interval(30000).subscribe(() => this.loadNotificationSummary()));
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   protected get currentUser(): AuthUser | null {
     return this.authService.getCurrentUser();
+  }
+
+  protected get canUseNotifications(): boolean {
+    return !!this.currentUser;
   }
 
   /**
@@ -91,15 +113,54 @@ export class SidebarComponent {
    */
   protected toggleUserPopover(event: MouseEvent): void {
     event.stopPropagation();
+    this.isNotificationsPopoverOpen = false;
     this.isUserPopoverOpen = !this.isUserPopoverOpen;
+  }
+
+  protected toggleNotificationsPopover(event: MouseEvent): void {
+    event.stopPropagation();
+    if (!this.canUseNotifications) return;
+
+    this.isUserPopoverOpen = false;
+    this.isNotificationsPopoverOpen = !this.isNotificationsPopoverOpen;
+
+    if (this.isNotificationsPopoverOpen) {
+      this.loadNotifications();
+    }
   }
 
   protected stopUserPopoverClick(event: MouseEvent): void {
     event.stopPropagation();
   }
 
+  protected stopNotificationsPopoverClick(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  protected markAllNotificationsAsRead(): void {
+    this.notificationsService.markAllAsRead().subscribe({
+      next: () => {
+        this.unreadNotifications = 0;
+        this.notifications = this.notifications.map((notification) => ({
+          ...notification,
+          readAt: notification.readAt || new Date().toISOString(),
+        }));
+      },
+    });
+  }
+
+  protected formatNotificationDate(value: string): string {
+    return new Intl.DateTimeFormat('es-HN', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value));
+  }
+
   protected logout(): void {
     this.isUserPopoverOpen = false;
+    this.isNotificationsPopoverOpen = false;
     this.authService.logout();
     this.router.navigateByUrl('/login');
   }
@@ -107,5 +168,35 @@ export class SidebarComponent {
   @HostListener('document:click')
   protected closeUserPopover(): void {
     this.isUserPopoverOpen = false;
+    this.isNotificationsPopoverOpen = false;
+  }
+
+  private loadNotificationSummary(): void {
+    if (!this.canUseNotifications) {
+      this.unreadNotifications = 0;
+      this.notifications = [];
+      return;
+    }
+
+    this.notificationsService.getUnreadCount().subscribe({
+      next: ({ count }) => {
+        this.unreadNotifications = count;
+      },
+    });
+  }
+
+  private loadNotifications(): void {
+    this.isLoadingNotifications = true;
+    this.notificationsService.getNotifications(8).subscribe({
+      next: (notifications) => {
+        this.notifications = notifications;
+        this.isLoadingNotifications = false;
+        this.loadNotificationSummary();
+      },
+      error: () => {
+        this.notifications = [];
+        this.isLoadingNotifications = false;
+      },
+    });
   }
 }

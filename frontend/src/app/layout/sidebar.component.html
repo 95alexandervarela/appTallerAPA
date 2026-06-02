@@ -12,6 +12,47 @@
   <p-menu [model]="menuItems" styleClass="sidebar-menu" />
 
   <div class="sidebar-footer">
+    @if (isNotificationsPopoverOpen) {
+      <div
+        class="notifications-popover"
+        role="dialog"
+        aria-label="Notificaciones"
+        (click)="stopNotificationsPopoverClick($event)"
+      >
+        <div class="notifications-header">
+          <div>
+            <strong>Notificaciones</strong>
+            <span>Asignaciones de tickets</span>
+          </div>
+
+          @if (unreadNotifications > 0) {
+            <button type="button" class="mark-read-button" (click)="markAllNotificationsAsRead()">
+              Leídas
+            </button>
+          }
+        </div>
+
+        <div class="notifications-list">
+          @if (isLoadingNotifications) {
+            <span class="notification-empty">Cargando...</span>
+          } @else if (notifications.length) {
+            @for (notification of notifications; track notification._id) {
+              <article class="notification-item" [class.is-unread]="!notification.readAt">
+                <span class="notification-sequence">#{{ notification.sequence }}</span>
+                <div>
+                  <strong>{{ notification.title }}</strong>
+                  <p>{{ notification.message }}</p>
+                  <small>{{ formatNotificationDate(notification.createdAt) }}</small>
+                </div>
+              </article>
+            }
+          } @else {
+            <span class="notification-empty">Sin notificaciones.</span>
+          }
+        </div>
+      </div>
+    }
+
     @if (isUserPopoverOpen) {
       <div class="user-popover" role="dialog" aria-label="Sesion de usuario" (click)="stopUserPopoverClick($event)">
         <div class="user-popover-copy">
@@ -24,6 +65,21 @@
           <span>Cerrar sesión</span>
         </button>
       </div>
+    }
+
+    @if (canUseNotifications) {
+      <button
+        type="button"
+        class="notification-button"
+        aria-label="Abrir notificaciones"
+        [attr.aria-expanded]="isNotificationsPopoverOpen"
+        (click)="toggleNotificationsPopover($event)"
+      >
+        <i class="pi pi-bell"></i>
+        @if (unreadNotifications > 0) {
+          <span class="notification-badge">{{ unreadNotifications }}</span>
+        }
+      </button>
     }
 
     <button

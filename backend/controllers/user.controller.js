@@ -228,7 +228,10 @@ exports.getUsers = async (req, res) => {
     }
 
     // El middleware pre('find') del modelo filtra automáticamente fecha_eliminacion: null
-    const users = await Usuario.find({}, "-passwordHash").populate("rol_id", "codigo nombre");
+    const users = await Usuario.find({}, "-passwordHash")
+      .collation({ locale: "es", strength: 1 })
+      .sort({ nombre_completo: 1 })
+      .populate("rol_id", "codigo nombre");
     const visibleUsers = users.filter((user) =>
       canViewUser(req.authUser.roleCode, getUserRolePayload(user).roleCode),
     );

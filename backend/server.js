@@ -16,6 +16,7 @@ const cobroFacturacionRoutes = require("./routes/cobroFacturacion.routes");
 const entregaEquipoRoutes = require("./routes/entregaEquipo.routes");
 const configStatusRoutes = require("./routes/configStatus.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 /**
  * Punto de entrada principal para el Servidor del Help Desk (Taller APA).
@@ -81,6 +82,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/config/statuses", configStatusRoutes);
 app.use("/api/recepciones-equipo", recepcionEquipoRoutes);
 app.use("/api/tickets", ticketRoutes);

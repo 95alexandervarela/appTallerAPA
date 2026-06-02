@@ -158,7 +158,7 @@ router.get('/overview', requireAuthContext, async (req, res) => {
             ]
           : []),
         { $sort: { createdAt: -1 } },
-        { $limit: 8 },
+        { $limit: 20 },
         {
           $lookup: {
             from: 'users',

@@ -170,7 +170,11 @@ export class UsersPanelComponent implements OnInit {
             activo: user.activo,
             status: user.activo ? 'Activo' : 'Inactivo',
             severity: user.activo ? 'success' as const : 'warn' as const,
-          })).filter((user) => this.canViewUser(user));
+          }))
+            .filter((user) => this.canViewUser(user))
+            .sort((firstUser, secondUser) =>
+              firstUser.name.localeCompare(secondUser.name, 'es', { sensitivity: 'base' }),
+            );
           users.forEach((user) => {
             if (user.roleId && user.roleName) {
               this.mergeRoleOption({
