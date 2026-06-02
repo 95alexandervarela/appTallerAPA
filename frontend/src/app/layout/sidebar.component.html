@@ -35,6 +35,8 @@
         <div class="notifications-list">
           @if (isLoadingNotifications) {
             <span class="notification-empty">Cargando...</span>
+          } @else if (notificationsErrorMessage) {
+            <span class="notification-empty">{{ notificationsErrorMessage }}</span>
           } @else if (notifications.length) {
             @for (notification of notifications; track notification._id) {
               <article class="notification-item" [class.is-unread]="!notification.readAt">

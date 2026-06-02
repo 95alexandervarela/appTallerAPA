@@ -200,7 +200,14 @@
 }
 
 .notifications-popover {
-  width: 292px;
+  bottom: 58px;
+  left: calc(100% + 14px);
+  width: min(320px, calc(100vw - 128px));
+  max-height: min(440px, calc(100vh - 32px));
+  overflow: hidden;
+  transform: none;
+  transform-origin: left bottom;
+  animation: notifications-popover-enter 150ms ease both;
 }
 
 .user-popover-copy {
@@ -246,11 +253,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .notifications-header div {
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .notifications-header strong,
@@ -287,6 +296,9 @@
 .notifications-list {
   display: grid;
   gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .notification-item {
@@ -337,6 +349,18 @@
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes notifications-popover-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

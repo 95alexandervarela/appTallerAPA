@@ -37,6 +37,63 @@
               <span pButtonLabel>Crear ticket</span>
             </button>
           }
+
+          <section class="ticket-filters" aria-label="Filtros de tickets">
+            <h3>Filtrar tickets</h3>
+
+            <input
+              pInputText
+              type="text"
+              name="filtroNombreCliente"
+              [(ngModel)]="clientNameFilter"
+              placeholder="Nombre del cliente"
+              class="filter-input"
+            />
+
+            <p-select
+              name="filtroEstadoTicket"
+              [options]="ticketStateFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="selectedStateFilter"
+              appendTo="body"
+            />
+
+            <p-select
+              name="filtroTipoEquipo"
+              [options]="equipmentFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              [(ngModel)]="selectedEquipmentFilter"
+              appendTo="body"
+            />
+
+            @if (canFilterByTechnician) {
+              <p-select
+                name="filtroTecnico"
+                [options]="technicianFilterOptions"
+                optionLabel="label"
+                optionValue="value"
+                [(ngModel)]="selectedTechnicianFilter"
+                appendTo="body"
+              />
+            }
+
+            @if (hasUsableTicketDate) {
+              <p-select
+                name="ordenFechaTickets"
+                [options]="dateSortOptions"
+                optionLabel="label"
+                optionValue="value"
+                [(ngModel)]="dateSortOrder"
+                appendTo="body"
+              />
+            }
+
+            <button type="button" class="clear-filters-button" (click)="clearTicketFilters()">
+              Limpiar filtros
+            </button>
+          </section>
         </div>
       </article>
 

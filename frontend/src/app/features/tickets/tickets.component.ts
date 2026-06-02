@@ -75,6 +75,7 @@ interface TicketForm {
 }
 
 type TicketStatusFilter = 'pendiente' | 'diagnostico' | 'reparacion' | '';
+type TicketDateSortOrder = 'recent' | 'oldest';
 
 /**
  * Se implementó generación temporal del número de caso.
@@ -119,6 +120,11 @@ export class TicketsComponent implements OnInit, AfterViewInit {
   protected selectedTechnicianId = '';
   protected selectedStatusCode = '';
   protected newTicketComment = '';
+  protected clientNameFilter = '';
+  protected selectedStateFilter = '';
+  protected selectedEquipmentFilter = '';
+  protected selectedTechnicianFilter = '';
+  protected dateSortOrder: TicketDateSortOrder = 'recent';
   protected filterStatus: TicketStatusFilter = '';
   protected isAssigningTicket = false;
   protected isUpdatingStatus = false;
@@ -148,6 +154,10 @@ export class TicketsComponent implements OnInit, AfterViewInit {
     { label: 'Media', value: 'media' },
     { label: 'Alta', value: 'alta' },
     { label: 'Urgente', value: 'urgente' },
+  ];
+  protected readonly dateSortOptions: SelectOption[] = [
+    { label: 'Más recientes', value: 'recent' },
+    { label: 'Más antiguos', value: 'oldest' },
   ];
 
   protected ticketStatusOptions: SelectOption[] = Object.values(TICKET_STATUS_CATALOG)
@@ -188,9 +198,10 @@ export class TicketsComponent implements OnInit, AfterViewInit {
 
   protected get ticketsFiltrados(): TicketResumen[] {
     const value = this.busquedaTicket.trim().toLowerCase();
-    let filteredTickets = this.sortTicketsByRecentDate(
+    let filteredTickets = this.applyTicketFilters(
       this.filterTicketsByStatus(this.filterTicketsForCurrentUser(this.tickets)),
     );
+    filteredTickets = this.sortTicketsByDate(filteredTickets);
 
     if (!value) return filteredTickets.slice(0, 20);
 
@@ -202,6 +213,63 @@ export class TicketsComponent implements OnInit, AfterViewInit {
         .includes(value),
       )
       .slice(0, 20);
+  }
+
+  protected get ticketStateFilterOptions(): SelectOption[] {
+    const options = this.buildUniqueFilterOptions(
+      this.filterTicketsForCurrentUser(this.tickets),
+      (ticket) => ticket.estado,
+    );
+
+    return [{ label: 'Todos los estados', value: '' }, ...options];
+  }
+
+  protected get equipmentFilterOptions(): SelectOption[] {
+    const options = this.buildUniqueFilterOptions(
+      this.filterTicketsForCurrentUser(this.tickets),
+      (ticket) => ticket.equipo,
+    );
+
+    return [{ label: 'Todos los equipos', value: '' }, ...options];
+  }
+
+  protected get canFilterByTechnician(): boolean {
+    return !this.authService.isTecnico();
+  }
+
+  protected get technicianFilterOptions(): SelectOption[] {
+    const currentTickets = this.filterTicketsForCurrentUser(this.tickets);
+    const assignedTechnicianIds = new Set(
+      currentTickets
+        .map((ticket) => ticket.tecnicoAsignadoId)
+        .filter((technicianId) => !!technicianId),
+    );
+    const knownTechnicianOptions = this.technicianOptions.filter((technician) =>
+      assignedTechnicianIds.has(technician.value),
+    );
+    const fallbackOptions = currentTickets
+      .filter((ticket) => !!ticket.tecnicoAsignadoId && !!ticket.tecnicoAsignadoNombre)
+      .map((ticket) => ({
+        label: ticket.tecnicoAsignadoNombre,
+        value: ticket.tecnicoAsignadoId,
+      }));
+    const optionMap = new Map<string, SelectOption>();
+
+    [...knownTechnicianOptions, ...fallbackOptions].forEach((option) => {
+      if (option.value && !optionMap.has(option.value)) {
+        optionMap.set(option.value, option);
+      }
+    });
+
+    const options = Array.from(optionMap.values()).sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, 'es', { sensitivity: 'base' }),
+    );
+
+    return [{ label: 'Todos los técnicos', value: '' }, ...options];
+  }
+
+  protected get hasUsableTicketDate(): boolean {
+    return this.tickets.some((ticket) => Number.isFinite(new Date(ticket.fechaCreacion).getTime()));
   }
 
   /**
@@ -238,13 +306,6 @@ export class TicketsComponent implements OnInit, AfterViewInit {
     return tickets.filter((ticket) => ticket.tecnicoAsignadoId === currentUserId);
   }
 
-  private sortTicketsByRecentDate(tickets: TicketResumen[]): TicketResumen[] {
-    return [...tickets].sort(
-      (firstTicket, secondTicket) =>
-        new Date(secondTicket.fechaCreacion).getTime() - new Date(firstTicket.fechaCreacion).getTime(),
-    );
-  }
-
   private matchesStatusFilter(estadoCodigo: string): boolean {
     if (this.filterStatus === 'pendiente') {
       return isTicketStatusInGroup(estadoCodigo, ['pendiente', 'garantia', 'repuesto']);
@@ -261,6 +322,53 @@ export class TicketsComponent implements OnInit, AfterViewInit {
     return true;
   }
 
+  private applyTicketFilters(tickets: TicketResumen[]): TicketResumen[] {
+    const clientName = this.clientNameFilter.trim().toLowerCase();
+
+    return tickets.filter((ticket) => {
+      const matchesClient =
+        !clientName || ticket.cliente.toLowerCase().includes(clientName);
+      const matchesState =
+        !this.selectedStateFilter || ticket.estado === this.selectedStateFilter;
+      const matchesEquipment =
+        !this.selectedEquipmentFilter || ticket.equipo === this.selectedEquipmentFilter;
+      const matchesTechnician =
+        !this.selectedTechnicianFilter || ticket.tecnicoAsignadoId === this.selectedTechnicianFilter;
+
+      return matchesClient && matchesState && matchesEquipment && matchesTechnician;
+    });
+  }
+
+  private sortTicketsByDate(tickets: TicketResumen[]): TicketResumen[] {
+    if (!this.hasUsableTicketDate) return [...tickets];
+
+    const direction = this.dateSortOrder === 'oldest' ? 1 : -1;
+
+    return [...tickets].sort((firstTicket, secondTicket) => {
+      const firstDate = new Date(firstTicket.fechaCreacion).getTime();
+      const secondDate = new Date(secondTicket.fechaCreacion).getTime();
+      const safeFirstDate = Number.isFinite(firstDate) ? firstDate : 0;
+      const safeSecondDate = Number.isFinite(secondDate) ? secondDate : 0;
+
+      return (safeFirstDate - safeSecondDate) * direction;
+    });
+  }
+
+  private buildUniqueFilterOptions(
+    tickets: TicketResumen[],
+    valueSelector: (ticket: TicketResumen) => string,
+  ): SelectOption[] {
+    return Array.from(
+      new Set(
+        tickets
+          .map(valueSelector)
+          .filter((value) => !!value),
+      ),
+    )
+      .sort((firstValue, secondValue) => firstValue.localeCompare(secondValue, 'es', { sensitivity: 'base' }))
+      .map((value) => ({ label: value, value }));
+  }
+
   protected abrirFormulario(): void {
     if (!this.canCreateTicket()) return;
 
@@ -275,6 +383,14 @@ export class TicketsComponent implements OnInit, AfterViewInit {
 
   protected openFullTicketsView(): void {
     this.router.navigate(['/tickets']);
+  }
+
+  protected clearTicketFilters(): void {
+    this.clientNameFilter = '';
+    this.selectedStateFilter = '';
+    this.selectedEquipmentFilter = '';
+    this.selectedTechnicianFilter = '';
+    this.dateSortOrder = 'recent';
   }
 
   protected cancelarCreacion(): void {

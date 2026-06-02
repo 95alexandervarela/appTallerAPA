@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
-import { Subscription, interval } from 'rxjs';
+import { Subscription, finalize, interval, timeout } from 'rxjs';
 import { AuthService, AuthUser } from '../core/services/auth.service';
 import { NotificationsService, TicketNotification } from '../core/services/notifications.service';
 
@@ -26,6 +26,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   protected unreadNotifications = 0;
   protected notifications: TicketNotification[] = [];
   protected isLoadingNotifications = false;
+  protected notificationsErrorMessage = '';
 
   private readonly subscriptions = new Subscription();
 
@@ -157,6 +158,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   protected markAllNotificationsAsRead(): void {
+    this.notificationsErrorMessage = '';
+
     this.notificationsService.markAllAsRead().subscribe({
       next: () => {
         this.unreadNotifications = 0;
@@ -164,6 +167,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ...notification,
           readAt: notification.readAt || new Date().toISOString(),
         }));
+      },
+      error: () => {
+        this.notificationsErrorMessage = 'No se pudieron marcar las notificaciones como leídas.';
       },
     });
   }
@@ -206,18 +212,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private fetchNotifications(): void {
     this.isLoadingNotifications = true;
+    this.notificationsErrorMessage = '';
     console.log('request /api/notifications');
-    this.notificationsService.getNotifications(8).subscribe({
+    this.notificationsService.getNotifications(8).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.isLoadingNotifications = false;
+      }),
+    ).subscribe({
       next: (notifications) => {
         console.log('response', notifications);
-        this.notifications = notifications;
-        this.isLoadingNotifications = false;
+        this.notifications = Array.isArray(notifications) ? notifications : [];
         this.loadNotificationSummary();
       },
       error: (error) => {
         console.error('error notificaciones', error);
         this.notifications = [];
-        this.isLoadingNotifications = false;
+        this.notificationsErrorMessage = 'No se pudieron cargar las notificaciones.';
       },
     });
   }
