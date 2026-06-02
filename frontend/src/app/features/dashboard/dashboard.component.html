@@ -1,0 +1,116 @@
+<section class="dashboard-page">
+  <header class="dashboard-header">
+    <div>
+      <span class="eyebrow">Panel de control</span>
+      <h1>Dashboard</h1>
+      <p>
+        {{ overview?.scope === 'assigned' ? 'Actividad asignada a tu usuario' : 'Estado operativo del taller' }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <span class="refresh-time">Actualizado {{ lastRefreshLabel }}</span>
+      <button type="button" class="icon-button" aria-label="Recargar dashboard" (click)="refresh()">
+        <i class="pi pi-refresh" [class.spin]="isRefreshing" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <div class="notice error" role="alert">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+  }
+
+  @if (isLoading) {
+    <section class="skeleton-grid" aria-label="Cargando dashboard">
+      @for (item of [1, 2, 3, 4]; track item) {
+        <div class="skeleton-card"></div>
+      }
+    </section>
+  } @else {
+    <section class="kpi-grid" aria-label="Metricas principales">
+      @for (card of kpiCards; track card.label) {
+        <article class="kpi-card" [class]="'tone-' + card.tone">
+          <div class="kpi-icon">
+            <i [class]="card.icon" aria-hidden="true"></i>
+          </div>
+          <div>
+            <strong>{{ card.value | number }}</strong>
+            <span>{{ card.label }}</span>
+            <small>{{ card.detail }}</small>
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="status-section">
+      <div class="section-title">
+        <div>
+          <span class="eyebrow">Estados dinámicos</span>
+          <h2>Tickets por estado</h2>
+        </div>
+        <button type="button" class="text-button" (click)="openTickets()">
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          <span>Ver tickets</span>
+        </button>
+      </div>
+
+      @if (statusCards.length) {
+        <div class="status-grid">
+          @for (status of statusCards; track status.estado) {
+            <article class="status-card" [style.--state-color]="status.color">
+              <div>
+                <span>{{ status.label }}</span>
+                <strong>{{ status.count | number }}</strong>
+              </div>
+              <div class="status-bar" aria-hidden="true">
+                <span></span>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="pi pi-inbox" aria-hidden="true"></i>
+          <span>No hay tickets activos para mostrar.</span>
+        </div>
+      }
+    </section>
+
+    <section class="activity-section">
+      <div class="section-title">
+        <div>
+          <span class="eyebrow">Últimos cambios</span>
+          <h2>Actividad reciente</h2>
+        </div>
+      </div>
+
+      @if (recentActivity.length) {
+        <div class="timeline">
+          @for (activity of recentActivity; track activity.ticket + activity.fecha) {
+            <article class="timeline-item" [style.--activity-color]="activity.color">
+              <span class="timeline-dot"></span>
+              <div class="timeline-content">
+                <div>
+                  <strong>{{ activity.ticket }}</strong>
+                  <span>{{ activity.accion }}</span>
+                </div>
+                <p>{{ activity.fromStatusLabel }} → {{ activity.toStatusLabel }}</p>
+                <small>
+                  {{ activity.usuario }} · {{ activity.fecha | date: 'dd/MM/yyyy HH:mm' }}
+                </small>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="pi pi-clock" aria-hidden="true"></i>
+          <span>No hay actividad reciente registrada.</span>
+        </div>
+      }
+    </section>
+  }
+</section>

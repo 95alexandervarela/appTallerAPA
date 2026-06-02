@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ConfigComponent } from './features/config/config.component';
+import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { HomeComponent } from './features/home/home.component';
 import { RecepcionEquipoComponent } from './features/recepcion-equipo/recepcion-equipo.component';
 import { TicketsComponent } from './features/tickets/tickets.component';
@@ -50,6 +51,17 @@ export const routes: Routes = [
       {
         path: '',
         component: TicketsComponent
+      }
+    ]
+  },
+  {
+    path: 'dashboard',
+    component: LayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        component: DashboardComponent
       }
     ]
   },

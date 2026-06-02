@@ -40,7 +40,8 @@ export class SidebarComponent {
     },
     {
       label: 'Dashboard',
-      icon: 'pi pi-chart-line'
+      icon: 'pi pi-chart-line',
+      routerLink: '/dashboard'
     },
     {
       label: 'Reportes',

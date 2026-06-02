@@ -43,7 +43,7 @@ export class AppearancePanelComponent implements OnInit {
         this.icons = icons;
         if (!this.selectedIconUrl && icons.length) {
           this.selectedIconUrl = icons[0].url;
-          this.persistSelectedIcon(icons[0].url);
+          this.iconService.setSelectedIconUrl(icons[0].url);
         }
         this.isLoading = false;
         this.cdr.detectChanges();
