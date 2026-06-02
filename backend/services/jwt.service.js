@@ -10,11 +10,16 @@ const jwt = require('jsonwebtoken');
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
 
-  if (!secret) {
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET no configurado');
   }
 
-  return secret;
+  console.warn('[Auth] JWT_SECRET no configurado; usando secreto local de desarrollo.');
+  return 'helpDeskTallerAPA-dev-jwt-secret';
 }
 
 function signAuthToken(user) {

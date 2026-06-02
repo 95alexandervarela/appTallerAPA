@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
+const { ensureLocalSystemUser } = require("./bootstrap/ensureLocalSystemUser");
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const roleRoutes = require("./routes/role.routes");
@@ -31,8 +32,6 @@ const notificationRoutes = require("./routes/notification.routes");
 
 const PORT = process.env.PORT || 3080;
 const app = express();
-// Conectar a la base de datos MongoDB
-connectDB();
 // Middlewares globales
 const allowedOrigins = new Set([
   "http://localhost:4200",
@@ -104,9 +103,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Ocurrió un error interno en el servidor" });
 });
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-  console.log(
-    `[Server] Servidor backend escuchando en el puerto: http://localhost:${PORT}`,
-  );
-});
+/**
+ * Inicializa MongoDB, bootstrap local y servidor HTTP en orden.
+ *
+ * @remarks
+ * Al clonar en otra PC, el bootstrap de desarrollo asegura el usuario
+ * `sistemas` antes de aceptar peticiones de login.
+ */
+async function startServer() {
+  await connectDB();
+  await ensureLocalSystemUser();
+
+  app.listen(PORT, () => {
+    console.log(
+      `[Server] Servidor backend escuchando en el puerto: http://localhost:${PORT}`,
+    );
+  });
+}
+
+startServer();

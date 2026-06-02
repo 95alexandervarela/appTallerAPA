@@ -4,9 +4,7 @@ Sistema interno de Help Desk para el departamento de Taller de Almacen Pajaro Az
 
 ## Estado actual
 
-El proyecto esta en fase inicial. Ya existe una base Angular para el frontend, PrimeNG esta configurado como libreria visual y la primera pantalla visible es `Login`.
-
-El backend Node/Express todavia esta pendiente de implementacion funcional; por ahora existe la estructura base y `nodemon` esta configurado para observar `backend/server.js`.
+El proyecto tiene frontend Angular con PrimeNG y backend Node/Express conectado a MongoDB. El login valida credenciales reales y emite JWT para proteger las rutas internas.
 
 ## Estructura principal
 
@@ -46,6 +44,47 @@ El frontend usa scripts que apuntan al Angular CLI central:
 ```bash
 cd /run/media/alexander@PAJAROAZUL.COM/Disk/Proyectos/appTallerAPA/frontend
 npm start
+```
+
+## Arranque despues de clonar
+
+En desarrollo local, el backend crea o normaliza automaticamente el usuario master:
+
+```text
+Usuario: sistemas
+Clave: Sistemas*2026
+Rol: Manager
+```
+
+Este bootstrap solo corre fuera de produccion y evita que un clon nuevo quede bloqueado por una base MongoDB vacia.
+
+Para levantar backend:
+
+```bash
+cd /run/media/alexander@PAJAROAZUL.COM/Disk/Proyectos/appTallerAPA
+npm start
+```
+
+Para levantar frontend:
+
+```bash
+cd /run/media/alexander@PAJAROAZUL.COM/Disk/Proyectos/appTallerAPA/frontend
+ng serve
+```
+
+Si quieres forzar manualmente la normalizacion del usuario:
+
+```bash
+npm run seed:sistemas
+```
+
+Variables disponibles en `.env.example`:
+
+```text
+MONGODB_URI=mongodb://127.0.0.1:27017/appTallerAPA
+JWT_SECRET=change_this_secret_in_production
+AUTO_BOOTSTRAP_SYSTEM_USER=true
+SISTEMAS_BOOTSTRAP_PASSWORD=Sistemas*2026
 ```
 
 ## Comandos verificados
