@@ -73,7 +73,7 @@
         class="notification-button"
         aria-label="Abrir notificaciones"
         [attr.aria-expanded]="isNotificationsPopoverOpen"
-        (click)="toggleNotificationsPopover($event)"
+        (click)="loadNotifications($event)"
       >
         <i class="pi pi-bell"></i>
         @if (unreadNotifications > 0) {

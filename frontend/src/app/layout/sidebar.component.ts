@@ -117,6 +117,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.isUserPopoverOpen = !this.isUserPopoverOpen;
   }
 
+  protected loadNotifications(event?: MouseEvent): void {
+    console.log('click campana');
+    event?.stopPropagation();
+
+    if (!this.canUseNotifications) {
+      console.log('notificaciones bloqueadas: usuario no autenticado');
+      return;
+    }
+
+    this.isUserPopoverOpen = false;
+    this.isNotificationsPopoverOpen = !this.isNotificationsPopoverOpen;
+
+    if (!this.isNotificationsPopoverOpen) {
+      return;
+    }
+
+    this.fetchNotifications();
+  }
+
   protected toggleNotificationsPopover(event: MouseEvent): void {
     event.stopPropagation();
     if (!this.canUseNotifications) return;
@@ -125,7 +144,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.isNotificationsPopoverOpen = !this.isNotificationsPopoverOpen;
 
     if (this.isNotificationsPopoverOpen) {
-      this.loadNotifications();
+      this.fetchNotifications();
     }
   }
 
@@ -185,15 +204,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadNotifications(): void {
+  private fetchNotifications(): void {
     this.isLoadingNotifications = true;
+    console.log('request /api/notifications');
     this.notificationsService.getNotifications(8).subscribe({
       next: (notifications) => {
+        console.log('response', notifications);
         this.notifications = notifications;
         this.isLoadingNotifications = false;
         this.loadNotificationSummary();
       },
-      error: () => {
+      error: (error) => {
+        console.error('error notificaciones', error);
         this.notifications = [];
         this.isLoadingNotifications = false;
       },

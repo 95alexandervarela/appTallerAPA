@@ -1,6 +1,6 @@
-import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, switchMap, tap, timeout } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -97,7 +97,7 @@ type TicketStatusFilter = 'pendiente' | 'diagnostico' | 'reparacion' | '';
   templateUrl: './tickets.component.html',
   styleUrl: './tickets.component.scss',
 })
-export class TicketsComponent implements OnInit {
+export class TicketsComponent implements OnInit, AfterViewInit {
   @ViewChild('ticketCommentsList') private ticketCommentsList?: ElementRef<HTMLElement>;
 
   protected vistaActual: 'dashboard' | 'crear' = 'dashboard';
@@ -166,6 +166,7 @@ export class TicketsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private recepcionEquipoService: RecepcionEquipoService,
     private ticketsService: TicketsService,
     private ticketStatusService: TicketStatusService,
@@ -181,18 +182,26 @@ export class TicketsComponent implements OnInit {
     this.loadTickets();
   }
 
+  ngAfterViewInit(): void {
+    console.log('overview boton renderizado');
+  }
+
   protected get ticketsFiltrados(): TicketResumen[] {
     const value = this.busquedaTicket.trim().toLowerCase();
-    let filteredTickets = this.filterTicketsByStatus(this.filterTicketsForCurrentUser(this.tickets));
+    let filteredTickets = this.sortTicketsByRecentDate(
+      this.filterTicketsByStatus(this.filterTicketsForCurrentUser(this.tickets)),
+    );
 
-    if (!value) return filteredTickets;
+    if (!value) return filteredTickets.slice(0, 20);
 
-    return filteredTickets.filter((ticket) =>
-      [ticket.numeroCaso, ticket.cliente, ticket.equipo, ticket.estado]
+    return filteredTickets
+      .filter((ticket) =>
+        [ticket.numeroCaso, ticket.cliente, ticket.equipo, ticket.estado]
         .join(' ')
         .toLowerCase()
         .includes(value),
-    );
+      )
+      .slice(0, 20);
   }
 
   /**
@@ -229,6 +238,13 @@ export class TicketsComponent implements OnInit {
     return tickets.filter((ticket) => ticket.tecnicoAsignadoId === currentUserId);
   }
 
+  private sortTicketsByRecentDate(tickets: TicketResumen[]): TicketResumen[] {
+    return [...tickets].sort(
+      (firstTicket, secondTicket) =>
+        new Date(secondTicket.fechaCreacion).getTime() - new Date(firstTicket.fechaCreacion).getTime(),
+    );
+  }
+
   private matchesStatusFilter(estadoCodigo: string): boolean {
     if (this.filterStatus === 'pendiente') {
       return isTicketStatusInGroup(estadoCodigo, ['pendiente', 'garantia', 'repuesto']);
@@ -255,6 +271,10 @@ export class TicketsComponent implements OnInit {
       numeroCaso: this.generarNumeroCasoTemporal(),
     };
     this.vistaActual = 'crear';
+  }
+
+  protected openFullTicketsView(): void {
+    this.router.navigate(['/tickets']);
   }
 
   protected cancelarCreacion(): void {
