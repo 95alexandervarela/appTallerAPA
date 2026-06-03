@@ -4,6 +4,7 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { HomeComponent } from './features/home/home.component';
 import { RecepcionEquipoComponent } from './features/recepcion-equipo/recepcion-equipo.component';
 import { TicketsComponent } from './features/tickets/tickets.component';
+import { TicketsHistoryComponent } from './features/tickets/history/tickets-history.component';
 import { LayoutComponent } from './layout/layout.component';
 import { Login } from './login/login';
 import { authGuard } from './core/guards/auth.guard';
@@ -51,6 +52,11 @@ export const routes: Routes = [
       {
         path: '',
         component: TicketsComponent
+      }
+      ,
+      {
+        path: 'history',
+        component: TicketsHistoryComponent
       }
     ]
   },

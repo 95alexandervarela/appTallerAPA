@@ -1,0 +1,20 @@
+<div class="tickets-history">
+  <div *ngIf="isLoading">Cargando historial de tickets...</div>
+  <div *ngIf="!isLoading && tickets.length === 0">No hay tickets cerrados para mostrar.</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <div *ngIf="!isLoading && tickets.length">
+    <div class="tickets-list">
+      <div *ngFor="let ticket of tickets" class="ticket-row">
+        <div class="ticket-id">{{ ticket.numeroTicket || ticket.numeroCaso || ticket._id }}</div>
+        <div class="ticket-client">{{ ticket.nombreCliente }}</div>
+        <div class="ticket-equipo">{{ ticket.tipoEquipo }}</div>
+        <div class="ticket-estado">{{ ticket.estadoTicket || ticket.estado }}</div>
+        <div class="ticket-fechas">
+          <div>Creación: {{ ticket.fechaCreacion | date:'short' }}</div>
+          <div *ngIf="ticket.fechaCierreComputed">Cierre: {{ ticket.fechaCierreComputed | date:'short' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

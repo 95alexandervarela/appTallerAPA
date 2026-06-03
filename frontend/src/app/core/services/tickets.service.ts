@@ -108,6 +108,16 @@ export class TicketsService {
     return this.http.get<TechnicianOption[]>(`${this.apiUrl}/tecnicos-disponibles`);
   }
 
+  getClosedTickets(filters?: any): Observable<any[]> {
+    // filters can be implemented later (id, cliente, estado, date range)
+    const params: any = {};
+    return this.http.get<any[]>(`${this.apiUrl}/history`, { params });
+  }
+
+  getTicketStatusHistory(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${id}/status-history`);
+  }
+
   assignTechnician(id: string, payload: AssignTechnicianPayload): Observable<TicketResponse> {
     return this.http.put<TicketResponse>(`${this.apiUrl}/${id}/asignar-tecnico`, payload);
   }

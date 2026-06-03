@@ -382,7 +382,7 @@ export class TicketsComponent implements OnInit, AfterViewInit {
   }
 
   protected openFullTicketsView(): void {
-    this.router.navigate(['/tickets']);
+    this.router.navigate(['/tickets/history']);
   }
 
   protected clearTicketFilters(): void {

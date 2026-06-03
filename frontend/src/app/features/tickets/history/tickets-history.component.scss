@@ -1,0 +1,9 @@
+.tickets-history { padding: 1rem; }
+.tickets-list { display:flex; flex-direction:column; gap:0.5rem; }
+.ticket-row { display:flex; gap:1rem; align-items:center; padding:0.75rem; border-radius:8px; background: rgba(255,255,255,0.02); }
+.ticket-id { font-weight:600; width:160px; }
+.ticket-client { flex:1; }
+.ticket-equipo { width:180px; }
+.ticket-estado { width:140px; }
+.ticket-fechas { width:260px; font-size:0.9rem; color:var(--muted, #9aa4b2); }
+.error { color: #ef4444 }

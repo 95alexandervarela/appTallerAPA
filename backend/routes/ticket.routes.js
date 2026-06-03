@@ -7,6 +7,7 @@ const Usuario = require('../models/user.model');
 const Rol = require('../models/role.model');
 const { requireAuthContext, requireRole } = require('../middleware/authContext.middleware');
 const { TicketStateAction, applyTicketState } = require('../services/ticketState.service');
+const ticketStatusService = require('../services/ticketStatus.service');
 const { createTicketAssignedNotification } = require('../services/notification.service');
 
 const LEGACY_TECNICO_ROLE_ID = '6a126c9296a6e0cb6e9df8a4';
@@ -93,7 +94,26 @@ router.post('/', requireAuthContext, async (req, res) => {
 
 router.get('/', requireAuthContext, async (req, res) => {
   try {
+    // Excluir tickets cuyo estado corresponda a la clasificacion de "cerrado" definida
+    const activeStatuses = await ticketStatusService.getActiveStatuses();
+    const closedStatusCodes = activeStatuses
+      .map((s) => String(s.code || '').trim().toLowerCase())
+      .filter((code, _, __) => {
+        // Mapear por etiqueta/nombre real (legacy definitions incluyen name)
+        const status = activeStatuses.find((st) => String(st.code || '').trim().toLowerCase() === code);
+        const name = String(status?.name || '').trim().toLowerCase();
+        return (
+          name.startsWith('reparad') || // Reparado
+          name.startsWith('listo') || // Listo (listo_reparacion, listo_entrega...)
+          name.includes('entreg') // Entregado / entregado al cliente
+        );
+      });
+
     const query = { activo: true };
+
+    if (closedStatusCodes.length) {
+      query.estadoTicket = { $nin: closedStatusCodes };
+    }
 
     if (req.authUser.roleCode === 'tecnico') {
       query.tecnicoAsignado = req.authUser.id;
@@ -116,7 +136,25 @@ router.get('/', requireAuthContext, async (req, res) => {
  */
 router.get('/my-tickets', requireAuthContext, async (req, res) => {
   try {
+    // Reutiliza la misma logica de exclusión de tickets cerrados que en /
+    const activeStatuses = await ticketStatusService.getActiveStatuses();
+    const closedStatusCodes = activeStatuses
+      .map((s) => String(s.code || '').trim().toLowerCase())
+      .filter((code, _, __) => {
+        const status = activeStatuses.find((st) => String(st.code || '').trim().toLowerCase() === code);
+        const name = String(status?.name || '').trim().toLowerCase();
+        return (
+          name.startsWith('reparad') ||
+          name.startsWith('listo') ||
+          name.includes('entreg')
+        );
+      });
+
     const query = { activo: true };
+
+    if (closedStatusCodes.length) {
+      query.estadoTicket = { $nin: closedStatusCodes };
+    }
 
     if (req.authUser.roleCode === 'tecnico') {
       query.tecnicoAsignado = req.authUser.id;
@@ -125,6 +163,94 @@ router.get('/my-tickets', requireAuthContext, async (req, res) => {
     const tickets = await populateTicket(Ticket.find(query)).sort({ fechaCreacion: -1 });
 
     res.status(200).json(tickets);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Lista tickets cerrados (historial) según la clasificación real de estados.
+ * Ordena por `fechaCierre` cuando existe; si falta, intenta usar el
+ * `TicketStatusHistory` más reciente que represente la transición a un
+ * estado de cierre.
+ */
+router.get('/history', requireAuthContext, async (req, res) => {
+  try {
+    const activeStatuses = await ticketStatusService.getActiveStatuses();
+    const closedStatusCodes = activeStatuses
+      .map((s) => String(s.code || '').trim().toLowerCase())
+      .filter((code) => {
+        const status = activeStatuses.find((st) => String(st.code || '').trim().toLowerCase() === code);
+        const name = String(status?.name || '').trim().toLowerCase();
+        return name.startsWith('reparad') || name.startsWith('listo') || name.includes('entreg');
+      });
+
+    const query = { activo: true, estadoTicket: { $in: closedStatusCodes } };
+
+    if (req.authUser.roleCode === 'tecnico') {
+      query.tecnicoAsignado = req.authUser.id;
+    }
+
+    let tickets = await populateTicket(Ticket.find(query));
+
+    // Para ordenar por fecha de cierre preferimos `fechaCierre`. Si no existe,
+    // consultamos el historial de estados para determinar la fecha de cierre.
+    const TicketStatusHistory = require('../models/ticketStatusHistory.model');
+
+    const ticketsWithClosure = await Promise.all(
+      tickets.map(async (ticket) => {
+        let closureDate = ticket.fechaCierre || null;
+
+        if (!closureDate) {
+          const history = await TicketStatusHistory.findOne({
+            ticketId: ticket._id,
+            toStatus: { $in: closedStatusCodes },
+          })
+            .sort({ createdAt: -1 })
+            .lean();
+
+          if (history && history.createdAt) closureDate = history.createdAt;
+        }
+
+        return { ticket, closureDate };
+      }),
+    );
+
+    ticketsWithClosure.sort((a, b) => {
+      const aTime = a.closureDate ? new Date(a.closureDate).getTime() : 0;
+      const bTime = b.closureDate ? new Date(b.closureDate).getTime() : 0;
+      return bTime - aTime; // más recientes primero
+    });
+
+    res.status(200).json(ticketsWithClosure.map((row) => ({ ...row.ticket, fechaCierreComputed: row.closureDate })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Devuelve el historial de estados de un ticket.
+ */
+router.get('/:id/status-history', requireAuthContext, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) return res.status(404).json({ error: 'Ticket no encontrado' });
+
+    if (
+      req.authUser.roleCode === 'tecnico' &&
+      !isAssignedToAuthenticatedTechnician(ticket, req.authUser)
+    ) {
+      return res.status(403).json({ error: 'No puedes ver historial de otro tecnico' });
+    }
+
+    const TicketStatusHistory = require('../models/ticketStatusHistory.model');
+
+    const history = await TicketStatusHistory.find({ ticketId: ticket._id })
+      .populate('changedBy', 'username nombre_completo')
+      .sort({ createdAt: 1 });
+
+    res.status(200).json(history);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
